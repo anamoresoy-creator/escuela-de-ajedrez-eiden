@@ -49,6 +49,7 @@ input[type=text]:focus,select:focus{outline:none;border-color:var(--terra)}
 .mode.small{background:var(--musgo)}
 .mode.big{background:var(--terra)}
 .mode.print{background:var(--papel);color:var(--carbon)}
+.mode.guide{background:var(--ocre);color:var(--carbon)}
 .top{display:flex;align-items:center;gap:10px;margin:4px 0 10px}
 .back{border:0;background:var(--papel);border-radius:12px;font-size:20px;width:44px;height:44px;flex:none}
 .top h2{font-size:20px;flex:1}
@@ -182,7 +183,8 @@ body.pdfmode #printArea{display:block}
   </div>
   <button class="mode small" data-go="moveMenu"><div class="ic">♜</div><div><b>Aprende a mover</b><span>Para empezar: cómo se mueve cada pieza</span></div></button>
   <button class="mode big" data-go="tacMenu"><div class="ic">♞</div><div><b>Entrena estrategias</b><span>Para los que ya juegan: mates, horquillas, clavadas…</span></div></button>
-  <button class="mode print" data-go="printMenu"><div class="ic">🖨️</div><div><b>Hojas para imprimir</b><span>Diploma, ejercicios, tablero recortable y guía para familias</span></div></button>
+  <button class="mode guide" id="homeGuide"><div class="ic">📖</div><div><b>Guía para aprender a jugar</b><span>Para familias que no saben jugar: piezas, movimientos y reglas. Se puede imprimir.</span></div></button>
+  <button class="mode print" data-go="printMenu"><div class="ic">🖨️</div><div><b>Hojas para imprimir</b><span>Diploma, ejercicios, tablero recortable y guía</span></div></button>
   <footer>Ana Moré · anamoresoy.com</footer>
 </section>
 
@@ -191,6 +193,7 @@ body.pdfmode #printArea{display:block}
   <div class="top"><button class="back" data-go="home">←</button><h2>Aprende a mover</h2><span class="who"></span></div>
   <p class="note" style="text-align:center;margin:0 0 6px">Elige una pieza. Llévala con el dedo hasta las estrellas.</p>
   <div class="grid" id="pieceGrid"></div>
+  <div class="actions" style="margin-top:14px"><button class="btn" id="moveGuide">📖 Guía para aprender a jugar</button></div>
 </section>
 
 <!-- MOVE PLAY -->
@@ -811,7 +814,9 @@ function fitPreview(){
   const w = pg.offsetWidth, z = Math.min(1, (window.innerWidth - 16) / w);
   pa.style.zoom = z;
 }
-function doPrint(html, size){
+let printReturn = "printMenu";
+function doPrint(html, size, ret){
+  printReturn = ret || "printMenu";
   $("#printArea").innerHTML = html; setPage(size);
   document.body.classList.add("preview");
   const note = $("#pbNote");
@@ -826,7 +831,7 @@ $("#pbPrint").addEventListener("click", () => {
   try{ window.print(); }
   catch(e){ const n = $("#pbNote"); n.className = "warn"; n.textContent = "Este navegador no deja imprimir desde aquí. Abre la página en Safari o Chrome."; }
 });
-$("#pbBack").addEventListener("click", () => { document.body.classList.remove("preview"); $("#printArea").innerHTML = ""; $("#printArea").style.zoom = 1; go("printMenu"); });
+$("#pbBack").addEventListener("click", () => { document.body.classList.remove("preview"); $("#printArea").innerHTML = ""; $("#printArea").style.zoom = 1; go(printReturn); });
 function today(){ return new Date().toLocaleDateString("es-ES", {day:"numeric", month:"long", year:"numeric"}); }
 function esc(t){ return String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
@@ -975,6 +980,8 @@ function guideHTML(){
   return p1 + p2 + p3 + p4;
 }
 $("#prGuide").addEventListener("click", () => doPrint(guideHTML(), "A4 portrait"));
+$("#homeGuide").addEventListener("click", () => doPrint(guideHTML(), "A4 portrait", "home"));
+$("#moveGuide").addEventListener("click", () => doPrint(guideHTML(), "A4 portrait", "moveMenu"));
 
 /* modo PDF directo: ?print=guia | diploma | tablero | ejercicios&l=0 */
 (function(){
