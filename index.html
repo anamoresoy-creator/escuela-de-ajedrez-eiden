@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Escuela de ajedrez Eiden</title>
+<meta name="description" content="Aprende a mover las piezas y entrena estrategias de ajedrez. Con hojas para imprimir.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --terra:#B65332; --musgo:#657258; --crema:#F5EBDD; --ocre:#C99568; --tierra:#A94F35; --carbon:#403D32;
+  --papel:#FFFBF5; --light:#F1E2CC; --dark:#C99568; --sel:rgba(101,114,88,.55); --last:rgba(182,83,50,.28);
+  --radius:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:Nunito,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--crema);color:var(--carbon);min-height:100vh;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+button{font-family:inherit;cursor:pointer}
+.app{max-width:560px;margin:0 auto;padding:14px 14px 40px}
+.screen{display:none}
+.screen.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+h1,h2,h3{margin:0}
+.brand{text-align:center;margin:6px 0 14px}
+.brand h1{font-family:Cormorant,Georgia,serif;font-size:40px;line-height:1;color:var(--terra);letter-spacing:.3px}
+.brand p{margin:4px 0 0;font-size:15px;color:var(--musgo);font-weight:600}
+.card{background:var(--papel);border-radius:var(--radius);padding:16px;margin:12px 0;box-shadow:0 2px 0 rgba(64,61,50,.08)}
+.card h2{font-size:18px;margin-bottom:10px}
+label.small{font-size:13px;font-weight:700;color:var(--musgo);display:block;margin-bottom:6px}
+input[type=text],select{width:100%;font:inherit;font-size:18px;padding:10px 12px;border:2px solid var(--ocre);border-radius:12px;background:#fff;color:var(--carbon)}
+input[type=text]:focus,select:focus{outline:none;border-color:var(--terra)}
+.avatars{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:12px}
+.av{font-size:26px;aspect-ratio:1;border-radius:12px;border:2px solid transparent;background:var(--crema);display:flex;align-items:center;justify-content:center;padding:0}
+.av.on{border-color:var(--terra);background:#fff;transform:scale(1.06)}
+.row{display:flex;align-items:center;gap:10px}
+.toggle{display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-weight:700}
+.switch{width:52px;height:30px;border-radius:30px;background:#d8cbb8;border:0;position:relative;transition:.2s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.2s}
+.switch.on{background:var(--musgo)}
+.switch.on::after{left:25px}
+.mode{display:flex;gap:14px;align-items:center;width:100%;text-align:left;border:0;border-radius:var(--radius);padding:16px;margin:12px 0;color:#fff;box-shadow:0 4px 0 rgba(0,0,0,.15)}
+.mode:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.15)}
+.mode .ic{font-size:44px;line-height:1;width:56px;text-align:center}
+.mode b{display:block;font-size:21px}
+.mode span{font-size:14px;opacity:.95}
+.mode.small{background:var(--musgo)}
+.mode.big{background:var(--terra)}
+.mode.print{background:var(--papel);color:var(--carbon)}
+.top{display:flex;align-items:center;gap:10px;margin:4px 0 10px}
+.back{border:0;background:var(--papel);border-radius:12px;font-size:20px;width:44px;height:44px;flex:none}
+.top h2{font-size:20px;flex:1}
+.who{font-size:24px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.tile{border:0;background:var(--papel);border-radius:var(--radius);padding:14px 10px;text-align:center;box-shadow:0 3px 0 rgba(64,61,50,.1);position:relative}
+.tile .pc{width:64px;height:64px;margin:0 auto}
+.tile b{display:block;font-size:17px;margin-top:4px}
+.tile small{display:block;color:var(--musgo);font-weight:700;font-size:13px;margin-top:2px}
+.tile.done::after{content:"✓";position:absolute;top:8px;right:10px;background:var(--musgo);color:#fff;width:26px;height:26px;border-radius:50%;font-weight:800;line-height:26px}
+.tile .lic{font-size:44px;line-height:64px;height:64px;color:var(--terra)}
+.bubble{background:var(--papel);border-radius:14px;padding:10px 14px;margin:8px 0;font-size:16px;line-height:1.35;min-height:46px}
+.bubble.ok{background:#e6ecdf}
+.bubble.bad{background:#f6e0d6}
+.stars{display:flex;gap:6px;justify-content:center;margin:6px 0;font-size:24px}
+.stars i{font-style:normal;opacity:.25;transition:.3s}
+.stars i.on{opacity:1;transform:scale(1.15)}
+/* board */
+.boardwrap{position:relative;width:100%;max-width:520px;margin:6px auto;touch-action:none;user-select:none;-webkit-user-select:none}
+.board{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1;border-radius:10px;overflow:hidden;box-shadow:0 0 0 6px var(--carbon);margin:6px}
+.sq{position:relative;aspect-ratio:1}
+.sq.l{background:var(--light)}
+.sq.d{background:var(--dark)}
+.sq.last::before{content:"";position:absolute;inset:0;background:var(--last)}
+.sq.sel::before{content:"";position:absolute;inset:0;background:var(--sel)}
+.sq.hint::before{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 4px var(--terra);animation:pulse 1s infinite}
+@keyframes pulse{50%{box-shadow:inset 0 0 0 7px var(--terra)}}
+.sq .dot{position:absolute;left:50%;top:50%;width:28%;height:28%;margin:-14% 0 0 -14%;border-radius:50%;background:rgba(64,61,50,.32);z-index:2;pointer-events:none}
+.sq .ring{position:absolute;inset:6%;border-radius:50%;box-shadow:inset 0 0 0 5px rgba(64,61,50,.32);z-index:2;pointer-events:none}
+.sq.flash{animation:flash .6s 2}
+@keyframes flash{50%{background:#e9a58c}}
+.sq .co{position:absolute;font-size:10px;font-weight:800;opacity:.6;pointer-events:none}
+.sq .co.f{right:3px;bottom:1px}.sq .co.r{left:3px;top:1px}
+.sq.l .co{color:var(--dark)}.sq.d .co{color:var(--light)}
+.pce{position:absolute;inset:0;z-index:3;transition:transform .18s ease}
+.pce svg,.pc svg,.ghost svg{width:100%;height:100%;display:block}
+.star{position:absolute;inset:12%;z-index:1;animation:spin 3s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ghost{position:fixed;z-index:50;pointer-events:none;transform:translate(-50%,-60%) scale(1.15);filter:drop-shadow(0 6px 6px rgba(0,0,0,.25))}
+.dragging{opacity:.25}
+.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+.btn{border:0;border-radius:14px;padding:12px 16px;font-size:16px;font-weight:800;background:var(--papel);color:var(--carbon);box-shadow:0 3px 0 rgba(64,61,50,.12)}
+.btn.pri{background:var(--terra);color:#fff}
+.btn.sec{background:var(--musgo);color:#fff}
+.btn:disabled{opacity:.4}
+.task{font-weight:800;font-size:17px;text-align:center;margin:4px 0}
+.side{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid var(--carbon);vertical-align:-2px;margin-right:6px}
+.side.w{background:#fff}.side.b{background:var(--carbon)}
+.dots{display:flex;gap:6px;justify-content:center;margin:6px 0}
+.dots span{width:12px;height:12px;border-radius:50%;background:#dccdb7}
+.dots span.ok{background:var(--musgo)}
+.dots span.cur{outline:3px solid var(--terra);outline-offset:1px}
+.intro p{font-size:17px;line-height:1.45;margin:0 0 10px}
+.note{font-size:13px;color:var(--musgo);line-height:1.4}
+.printopt{display:flex;flex-direction:column;gap:10px}
+.printopt .btn{text-align:left}
+canvas#confetti{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:100}
+#printArea{display:none}
+footer{text-align:center;font-size:12px;color:var(--musgo);margin-top:24px}
+
+#printBar{display:none}
+@media screen{
+  body.preview .app{display:none}
+  body.preview{background:#8a8478}
+  body.preview #printBar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;position:sticky;top:0;z-index:20;background:var(--crema);padding:10px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+  body.preview #printBar p{flex-basis:100%;text-align:center;margin:0;font-size:13px;color:var(--musgo);font-weight:600}
+  body.preview #printBar p.warn{color:var(--tierra);font-size:14px}
+  body.preview #printArea{display:block;padding:10px 0 30px}
+  body.preview .page{background:#fff;margin:0 auto 12px;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+}
+@media print{ #printBar{display:none!important} #printArea{zoom:1!important} }
+/* ===== PRINT ===== */
+@media print{
+  body{background:#fff;padding:0}
+  .app,canvas#confetti{display:none!important}
+  #printArea{display:block}
+}
+body.pdfmode .app{display:none}
+body.pdfmode #printArea{display:block}
+@media screen{ body.pdfmode{background:#888} body.pdfmode .page{background:#fff;margin:10px auto;box-shadow:0 2px 8px rgba(0,0,0,.3)} }
+.page{position:relative;overflow:hidden;page-break-after:always;break-after:page;color:var(--carbon);font-family:Nunito,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page:last-child{page-break-after:auto;break-after:auto}
+.page.port{width:210mm;height:296.5mm;padding:14mm 15mm}
+.page.land{width:297mm;height:209mm;padding:12mm}
+.page h1{font-family:Cormorant,Georgia,serif;color:var(--terra);font-size:30pt;line-height:1.05}
+.page h2{font-size:14pt;color:var(--terra);margin:5mm 0 2mm}
+.page p,.page li{font-size:10.5pt;line-height:1.4;margin:0 0 2mm}
+.page ul{margin:0 0 2mm;padding-left:5mm}
+.ph{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ocre);padding-bottom:3mm;margin-bottom:5mm}
+.ph .nm{font-size:11pt}
+.ex{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9mm 7mm}
+.ex .it{break-inside:avoid}
+.ex .cap{font-size:9.5pt;font-weight:800;margin-bottom:1.5mm;min-height:9mm}
+.ex .cap span{font-weight:600;color:var(--musgo)}
+.ex .ans{border-bottom:1px solid var(--carbon);height:8mm;margin-top:2mm;font-size:9pt;color:var(--musgo)}
+.sol li{margin-bottom:3mm}
+.pieces6{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4mm 6mm}
+.pieces6 .pz{break-inside:avoid}
+.pieces6 h3{font-size:12pt;color:var(--carbon);margin:1mm 0}
+.pieces6 p{font-size:9.5pt}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:6mm}
+.box{background:var(--crema);border-radius:4mm;padding:4mm;margin-bottom:4mm}
+.cut{display:grid;grid-template-columns:repeat(8,20mm);gap:0;justify-content:center}
+.cut div{width:20mm;height:20mm;border:0.3mm dashed #999;display:flex;align-items:center;justify-content:center}
+.cut div svg{width:16.5mm;height:16.5mm}
+.dip{height:100%;border:3mm solid var(--terra);border-radius:6mm;outline:1mm solid var(--ocre);outline-offset:-6mm;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12mm;background:var(--papel)}
+.dip h1{font-size:54pt}
+.dip .nm{font-family:Cormorant,Georgia,serif;font-size:46pt;color:var(--carbon);border-bottom:1mm solid var(--ocre);padding:0 12mm;margin:3mm 0 5mm;min-width:150mm}
+.dip .badges{display:flex;flex-wrap:wrap;gap:3mm;justify-content:center;max-width:240mm;margin:3mm 0}
+.dip .badges span{background:var(--crema);border-radius:20mm;padding:1.5mm 5mm;font-size:12pt;font-weight:700}
+.dip .sign{display:flex;gap:40mm;margin-top:10mm;font-size:11pt}
+.dip .sign div{border-top:0.4mm solid var(--carbon);width:60mm;padding-top:2mm}
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<div class="app">
+
+<!-- HOME -->
+<section class="screen active" id="home">
+  <div class="brand">
+    <h1>Escuela de ajedrez<br>Eiden</h1>
+    <p>Aprende a mover · Entrena estrategias · Imprime</p>
+  </div>
+  <div class="card">
+    <label class="small" for="name">¿Cómo te llamas?</label>
+    <input type="text" id="name" maxlength="20" placeholder="Escribe tu nombre" autocomplete="off">
+    <div class="avatars" id="avatars"></div>
+    <p class="note" style="margin:10px 0 0">💾 Tu progreso se guarda solo en este móvil o tablet. Si juegas en otro dispositivo o se borran los datos del navegador, empezarás de cero. Cada nombre guarda su propio progreso.</p>
+    <div class="toggle"><span>🔊 Voz que te anima</span><button class="switch on" id="voiceSw" aria-label="Voz"></button></div>
+  </div>
+  <button class="mode small" data-go="moveMenu"><div class="ic">♜</div><div><b>Aprende a mover</b><span>Para empezar: cómo se mueve cada pieza</span></div></button>
+  <button class="mode big" data-go="tacMenu"><div class="ic">♞</div><div><b>Entrena estrategias</b><span>Para los que ya juegan: mates, horquillas, clavadas…</span></div></button>
+  <button class="mode print" data-go="printMenu"><div class="ic">🖨️</div><div><b>Hojas para imprimir</b><span>Diploma, ejercicios, tablero recortable y guía para familias</span></div></button>
+  <footer>Ana Moré · anamoresoy.com</footer>
+</section>
+
+<!-- MOVE MENU -->
+<section class="screen" id="moveMenu">
+  <div class="top"><button class="back" data-go="home">←</button><h2>Aprende a mover</h2><span class="who"></span></div>
+  <p class="note" style="text-align:center;margin:0 0 6px">Elige una pieza. Llévala con el dedo hasta las estrellas.</p>
+  <div class="grid" id="pieceGrid"></div>
+</section>
+
+<!-- MOVE PLAY -->
+<section class="screen" id="movePlay">
+  <div class="top"><button class="back" data-go="moveMenu">←</button><h2 id="mpTitle">Torre</h2><span class="who"></span></div>
+  <div class="bubble" id="mpMsg"></div>
+  <div class="stars" id="mpStars"></div>
+  <div class="boardwrap" id="mpBoard"></div>
+  <div class="actions"><button class="btn" id="mpHelp">💡 ¿Cómo se mueve?</button><button class="btn sec" id="mpNext" style="display:none">Siguiente pieza →</button></div>
+</section>
+
+<!-- TACTICS MENU -->
+<section class="screen" id="tacMenu">
+  <div class="top"><button class="back" data-go="home">←</button><h2>Entrena estrategias</h2><span class="who"></span></div>
+  <div class="grid" id="lessonGrid"></div>
+</section>
+
+<!-- TACTICS INTRO -->
+<section class="screen" id="tacIntro">
+  <div class="top"><button class="back" data-go="tacMenu">←</button><h2 id="tiTitle"></h2><span class="who"></span></div>
+  <div class="card intro" id="tiText"></div>
+  <div class="actions"><button class="btn pri" id="tiStart">¡Empezar!</button></div>
+</section>
+
+<!-- TACTICS PLAY -->
+<section class="screen" id="tacPlay">
+  <div class="top"><button class="back" data-go="tacMenu">←</button><h2 id="tpTitle"></h2><span class="who"></span></div>
+  <div class="dots" id="tpDots"></div>
+  <div class="task" id="tpTask"></div>
+  <div class="boardwrap" id="tpBoard"></div>
+  <div class="bubble" id="tpMsg"></div>
+  <div class="actions">
+    <button class="btn" id="tpHint">💡 Pista</button>
+    <button class="btn" id="tpReset">↺ Repetir</button>
+    <button class="btn" id="tpSol" style="display:none">👀 Solución</button>
+    <button class="btn pri" id="tpNext" style="display:none">Siguiente →</button>
+  </div>
+</section>
+
+<!-- PRINT MENU -->
+<section class="screen" id="printMenu">
+  <div class="top"><button class="back" data-go="home">←</button><h2>Hojas para imprimir</h2><span class="who"></span></div>
+  <div class="card printopt">
+    <h2>🏅 Diploma</h2>
+    <p class="note" style="margin:0">Sale con el nombre, el avatar y todo lo conseguido hasta ahora en este dispositivo.</p>
+    <button class="btn pri" id="prDiploma">Imprimir diploma</button>
+  </div>
+  <div class="card printopt">
+    <h2>✏️ Hoja de ejercicios</h2>
+    <select id="prLesson"></select>
+    <label class="row note"><input type="checkbox" id="prSol" checked> Añadir una página con las soluciones</label>
+    <button class="btn pri" id="prEx">Imprimir ejercicios</button>
+  </div>
+  <div class="card printopt">
+    <h2>✂️ Tablero recortable</h2>
+    <p class="note" style="margin:0">Dos hojas: el tablero y las 32 piezas para recortar. Mejor en cartulina.</p>
+    <button class="btn pri" id="prBoard">Imprimir tablero</button>
+  </div>
+  <div class="card printopt">
+    <h2>📖 Guía para empezar a jugar</h2>
+    <p class="note" style="margin:0">Para familias que no saben jugar: el tablero, cómo se mueve cada pieza y las reglas especiales.</p>
+    <button class="btn pri" id="prGuide">Imprimir guía</button>
+  </div>
+  <p class="note" style="text-align:center">En el móvil o la tablet: Imprimir → «Guardar como PDF» si quieres guardarlo.</p>
+</section>
+</div>
+
+<div id="printBar">
+  <button class="btn" id="pbBack">← Volver</button>
+  <button class="btn pri" id="pbPrint">🖨️ Imprimir o guardar PDF</button>
+  <p id="pbNote">Si no se abre la ventana de impresión, abre esta página en Safari o Chrome.</p>
+</div>
+<div id="printArea"></div>
+
+<script>
+/*! chess.js | Copyright (c) 2025, Jeff Hlywa | BSD-2-Clause */
+const Chess=(()=>{function t(e,r,i,n){var s=Error.call(this,e);return Object.setPrototypeOf&&Object.setPrototypeOf(s,t.prototype),s.expected=r,s.found=i,s.location=n,s.name="SyntaxError",s}function e(t,e,r){return r=r||" ",t.length>e?t:(e-=t.length,t+(r+=r.repeat(e)).slice(0,e))}function r(e,r){var i,n,s,o,a={},h=(r=void 0!==r?r:{}).grammarSource,l={pgn:Wt},u=Wt,c="[",f='"',_="]",p=".",g="O-O-O",d="O-O",m="0-0-0",v="0-0",b="$",E="{",C="}",k=";",S="(",y=")",A="1-0",P="0-1",w="1/2-1/2",N="*",T=/^[a-zA-Z]/,I=/^[^"]/,O=/^[0-9]/,L=/^[.]/,q=/^[a-zA-Z1-8\-=]/,K=/^[+#]/,M=/^[!?]/,x=/^[^}]/,R=/^[^\r\n]/,F=/^[ \t\r\n]/,D=Bt("tag pair"),U=$t("[",!1),$=$t('"',!1),Q=$t("]",!1),B=Bt("tag name"),j=Qt([["a","z"],["A","Z"]],!1,!1),H=Bt("tag value"),V=Qt(['"'],!0,!1),W=Bt("move number"),G=Qt([["0","9"]],!1,!1),z=$t(".",!1),Z=Qt(["."],!1,!1),J=Bt("standard algebraic notation"),X=$t("O-O-O",!1),Y=$t("O-O",!1),tt=$t("0-0-0",!1),et=$t("0-0",!1),rt=Qt([["a","z"],["A","Z"],["1","8"],"-","="],!1,!1),it=Qt(["+","#"],!1,!1),nt=Bt("suffix annotation"),st=Qt(["!","?"],!1,!1),ot=Bt("NAG"),at=$t("$",!1),ht=Bt("brace comment"),lt=$t("{",!1),ut=Qt(["}"],!0,!1),ct=$t("}",!1),ft=Bt("rest of line comment"),_t=$t(";",!1),pt=Qt(["\r","\n"],!0,!1),gt=Bt("variation"),dt=$t("(",!1),mt=$t(")",!1),vt=Bt("game termination marker"),bt=$t("1-0",!1),Et=$t("0-1",!1),Ct=$t("1/2-1/2",!1),kt=$t("*",!1),St=Bt("whitespace"),yt=Qt([" ","\t","\r","\n"],!1,!1),At=function(t,e){return function(t,e){if(e.marker&&e.marker.comment){let t=e.root;for(;;){const r=t.variations[0];if(!r){t.comment=e.marker.comment;break}t=r}}return{headers:t,root:e.root,result:(e.marker&&e.marker.result)??void 0}}(t,e)},Pt=function(t){return Object.fromEntries(t)},wt=function(t,e){return[t,e]},Nt=function(t,e){return{root:t,marker:e}},Tt=function(t,e){return function(...t){const[e,...r]=t;let i=e;for(const t of r)null!==t&&(i.variations=[t,...t.variations],t.variations=[],i=t);return e}(function(t){return null!==t?{comment:t,variations:[]}:{variations:[]}}(t),...e.flat())},It=function(t,e,r,i,n){return function(t,e,r,i,n){const s={move:t,variations:n};return e&&(s.suffix=e),r&&(s.nag=r),null!==i&&(s.comment=i),s}(t,e,r,i,n)},Ot=function(t){return t},Lt=function(t){return t.replace(/[\r\n]+/g," ")},qt=function(t){return t.trim()},Kt=function(t){return t},Mt=function(t,e){return{result:t,comment:e}},xt=0|r.peg$currPos,Rt=[{line:1,column:1}],Ft=xt,Dt=r.peg$maxFailExpected||[],Ut=0|r.peg$silentFails;if(r.startRule){if(!(r.startRule in l))throw new Error("Can't start parsing from rule \""+r.startRule+'".');u=l[r.startRule]}function $t(t,e){return{type:"literal",text:t,ignoreCase:e}}function Qt(t,e,r){return{type:"class",parts:t,inverted:e,ignoreCase:r}}function Bt(t){return{type:"other",description:t}}function jt(t){var r,i=Rt[t];if(i)return i;if(t>=Rt.length)r=Rt.length-1;else for(r=t;!Rt[--r];);for(i={line:(i=Rt[r]).line,column:i.column};r<t;)10===e.charCodeAt(r)?(i.line++,i.column=1):i.column++,r++;return Rt[t]=i,i}function Ht(t,e,r){var i=jt(t),n=jt(e);return{source:h,start:{offset:t,line:i.line,column:i.column},end:{offset:e,line:n.line,column:n.column}}}function Vt(t){xt<Ft||(xt>Ft&&(Ft=xt,Dt=[]),Dt.push(t))}function Wt(){var t,r;return t=function(){var t,e,r;t=xt,e=[],r=Gt();for(;r!==a;)e.push(r),r=Gt();return r=te(),t=Pt(e),t}(),r=function(){var t,r,i;t=xt,r=zt(),te(),i=function(){var t,r,i;Ut++,t=xt,e.substr(xt,3)===A?(r=A,xt+=3):(r=a,0===Ut&&Vt(bt));r===a&&(e.substr(xt,3)===P?(r=P,xt+=3):(r=a,0===Ut&&Vt(Et)),r===a&&(e.substr(xt,7)===w?(r=w,xt+=7):(r=a,0===Ut&&Vt(Ct)),r===a&&(42===e.charCodeAt(xt)?(r=N,xt++):(r=a,0===Ut&&Vt(kt)))));r!==a?(te(),(i=Xt())===a&&(i=null),t=Mt(r,i)):(xt=t,t=a);Ut--,t===a&&(r=a,0===Ut&&Vt(vt));return t}(),i===a&&(i=null);return te(),t=Nt(r,i),t}(),At(t,r)}function Gt(){var t,r,i,n,s,o,h;return Ut++,t=xt,te(),91===e.charCodeAt(xt)?(r=c,xt++):(r=a,0===Ut&&Vt(U)),r!==a?(te(),i=function(){var t,r,i;Ut++,t=xt,r=[],i=e.charAt(xt),T.test(i)?xt++:(i=a,0===Ut&&Vt(j));if(i!==a)for(;i!==a;)r.push(i),i=e.charAt(xt),T.test(i)?xt++:(i=a,0===Ut&&Vt(j));else r=a;t=r!==a?e.substring(t,xt):r;Ut--,t===a&&(r=a,0===Ut&&Vt(B));return t}(),i!==a?(te(),34===e.charCodeAt(xt)?(n=f,xt++):(n=a,0===Ut&&Vt($)),n!==a?(s=function(){var t,r,i;Ut++,t=xt,r=[],i=e.charAt(xt),I.test(i)?xt++:(i=a,0===Ut&&Vt(V));for(;i!==a;)r.push(i),i=e.charAt(xt),I.test(i)?xt++:(i=a,0===Ut&&Vt(V));t=e.substring(t,xt),Ut--,r=a,0===Ut&&Vt(H);return t}(),34===e.charCodeAt(xt)?(o=f,xt++):(o=a,0===Ut&&Vt($)),o!==a?(te(),93===e.charCodeAt(xt)?(h=_,xt++):(h=a,0===Ut&&Vt(Q)),h!==a?t=wt(i,s):(xt=t,t=a)):(xt=t,t=a)):(xt=t,t=a)):(xt=t,t=a)):(xt=t,t=a),Ut--,t===a&&0===Ut&&Vt(D),t}function zt(){var t,e,r;for((t=Xt())===a&&(t=null),e=[],r=Zt();r!==a;)e.push(r),r=Zt();return Tt(t,e)}function Zt(){var t,r,i,n,s,o,h,l;if(t=xt,te(),function(){var t,r,i,n,s,o;Ut++,t=xt,r=[],i=e.charAt(xt),O.test(i)?xt++:(i=a,0===Ut&&Vt(G));for(;i!==a;)r.push(i),i=e.charAt(xt),O.test(i)?xt++:(i=a,0===Ut&&Vt(G));46===e.charCodeAt(xt)?(i=p,xt++):(i=a,0===Ut&&Vt(z));if(i!==a){for(n=te(),s=[],o=e.charAt(xt),L.test(o)?xt++:(o=a,0===Ut&&Vt(Z));o!==a;)s.push(o),o=e.charAt(xt),L.test(o)?xt++:(o=a,0===Ut&&Vt(Z));t=r=[r,i,n,s]}else xt=t,t=a;Ut--,t===a&&(r=a,0===Ut&&Vt(W))}(),te(),r=function(){var t,r,i,n,s,o;Ut++,t=xt,r=xt,e.substr(xt,5)===g?(i=g,xt+=5):(i=a,0===Ut&&Vt(X));if(i===a&&(e.substr(xt,3)===d?(i=d,xt+=3):(i=a,0===Ut&&Vt(Y)),i===a&&(e.substr(xt,5)===m?(i=m,xt+=5):(i=a,0===Ut&&Vt(tt)),i===a&&(e.substr(xt,3)===v?(i=v,xt+=3):(i=a,0===Ut&&Vt(et)),i===a))))if(i=xt,n=e.charAt(xt),T.test(n)?xt++:(n=a,0===Ut&&Vt(j)),n!==a){if(s=[],o=e.charAt(xt),q.test(o)?xt++:(o=a,0===Ut&&Vt(rt)),o!==a)for(;o!==a;)s.push(o),o=e.charAt(xt),q.test(o)?xt++:(o=a,0===Ut&&Vt(rt));else s=a;s!==a?i=n=[n,s]:(xt=i,i=a)}else xt=i,i=a;i!==a?(n=e.charAt(xt),K.test(n)?xt++:(n=a,0===Ut&&Vt(it)),n===a&&(n=null),r=i=[i,n]):(xt=r,r=a);t=r!==a?e.substring(t,xt):r;Ut--,t===a&&(r=a,0===Ut&&Vt(J));return t}(),r!==a){for(i=function(){var t,r,i;Ut++,t=xt,r=[],i=e.charAt(xt),M.test(i)?xt++:(i=a,0===Ut&&Vt(st));for(;i!==a;)r.push(i),r.length>=2?i=a:(i=e.charAt(xt),M.test(i)?xt++:(i=a,0===Ut&&Vt(st)));r.length<1?(xt=t,t=a):t=r;Ut--,t===a&&(r=a,0===Ut&&Vt(nt));return t}(),i===a&&(i=null),n=[],s=Jt();s!==a;)n.push(s),s=Jt();for(s=te(),(o=Xt())===a&&(o=null),h=[],l=Yt();l!==a;)h.push(l),l=Yt();t=It(r,i,n,o,h)}else xt=t,t=a;return t}function Jt(){var t,r,i,n,s;if(Ut++,t=xt,te(),36===e.charCodeAt(xt)?(r=b,xt++):(r=a,0===Ut&&Vt(at)),r!==a){if(i=xt,n=[],s=e.charAt(xt),O.test(s)?xt++:(s=a,0===Ut&&Vt(G)),s!==a)for(;s!==a;)n.push(s),s=e.charAt(xt),O.test(s)?xt++:(s=a,0===Ut&&Vt(G));else n=a;(i=n!==a?e.substring(i,xt):n)!==a?t=Ot(i):(xt=t,t=a)}else xt=t,t=a;return Ut--,t===a&&0===Ut&&Vt(ot),t}function Xt(){var t;return(t=function(){var t,r,i,n,s;Ut++,t=xt,123===e.charCodeAt(xt)?(r=E,xt++):(r=a,0===Ut&&Vt(lt));if(r!==a){for(i=xt,n=[],s=e.charAt(xt),x.test(s)?xt++:(s=a,0===Ut&&Vt(ut));s!==a;)n.push(s),s=e.charAt(xt),x.test(s)?xt++:(s=a,0===Ut&&Vt(ut));i=e.substring(i,xt),125===e.charCodeAt(xt)?(n=C,xt++):(n=a,0===Ut&&Vt(ct)),n!==a?t=Lt(i):(xt=t,t=a)}else xt=t,t=a;Ut--,t===a&&(r=a,0===Ut&&Vt(ht));return t}())===a&&(t=function(){var t,r,i,n,s;Ut++,t=xt,59===e.charCodeAt(xt)?(r=k,xt++):(r=a,0===Ut&&Vt(_t));if(r!==a){for(i=xt,n=[],s=e.charAt(xt),R.test(s)?xt++:(s=a,0===Ut&&Vt(pt));s!==a;)n.push(s),s=e.charAt(xt),R.test(s)?xt++:(s=a,0===Ut&&Vt(pt));i=e.substring(i,xt),t=qt(i)}else xt=t,t=a;Ut--,t===a&&(r=a,0===Ut&&Vt(ft));return t}()),t}function Yt(){var t,r,i,n;return Ut++,t=xt,te(),40===e.charCodeAt(xt)?(r=S,xt++):(r=a,0===Ut&&Vt(dt)),r!==a&&(i=zt())!==a?(te(),41===e.charCodeAt(xt)?(n=y,xt++):(n=a,0===Ut&&Vt(mt)),n!==a?t=Kt(i):(xt=t,t=a)):(xt=t,t=a),Ut--,t===a&&0===Ut&&Vt(gt),t}function te(){var t,r;for(Ut++,t=[],r=e.charAt(xt),F.test(r)?xt++:(r=a,0===Ut&&Vt(yt));r!==a;)t.push(r),r=e.charAt(xt),F.test(r)?xt++:(r=a,0===Ut&&Vt(yt));return Ut--,r=a,0===Ut&&Vt(St),t}if(i=u(),r.peg$library)return{peg$result:i,peg$currPos:xt,peg$FAILED:a,peg$maxFailExpected:Dt,peg$maxFailPos:Ft};if(i!==a&&xt===e.length)return i;throw i!==a&&xt<e.length&&Vt({type:"end"}),n=Dt,s=Ft<e.length?e.charAt(Ft):null,o=Ft<e.length?Ht(Ft,Ft+1):Ht(Ft,Ft),new t(t.buildMessage(n,s),n,s,o)}
+/**
+ * @license
+ * Copyright (c) 2025, Jeff Hlywa (jhlywa@gmail.com)
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */!function(t,e){function r(){this.constructor=t}r.prototype=e.prototype,t.prototype=new r}(t,Error),t.prototype.format=function(t){var r="Error: "+this.message;if(this.location){var i,n=null;for(i=0;i<t.length;i++)if(t[i].source===this.location.source){n=t[i].text.split(/\r\n|\n|\r/g);break}var s=this.location.start,o=this.location.source&&"function"==typeof this.location.source.offset?this.location.source.offset(s):s,a=this.location.source+":"+o.line+":"+o.column;if(n){var h=this.location.end,l=e("",o.line.toString().length," "),u=n[s.line-1],c=(s.line===h.line?h.column:u.length+1)-s.column||1;r+="\n --\x3e "+a+"\n"+l+" |\n"+o.line+" | "+u+"\n"+l+" | "+e("",s.column-1," ")+e("",c,"^")}else r+="\n at "+a}return r},t.buildMessage=function(t,e){var r={literal:function(t){return'"'+n(t.text)+'"'},class:function(t){var e=t.parts.map(function(t){return Array.isArray(t)?s(t[0])+"-"+s(t[1]):s(t)});return"["+(t.inverted?"^":"")+e.join("")+"]"},any:function(){return"any character"},end:function(){return"end of input"},other:function(t){return t.description}};function i(t){return t.charCodeAt(0).toString(16).toUpperCase()}function n(t){return t.replace(/\\/g,"\\\\").replace(/"/g,'\\"').replace(/\0/g,"\\0").replace(/\t/g,"\\t").replace(/\n/g,"\\n").replace(/\r/g,"\\r").replace(/[\x00-\x0F]/g,function(t){return"\\x0"+i(t)}).replace(/[\x10-\x1F\x7F-\x9F]/g,function(t){return"\\x"+i(t)})}function s(t){return t.replace(/\\/g,"\\\\").replace(/\]/g,"\\]").replace(/\^/g,"\\^").replace(/-/g,"\\-").replace(/\0/g,"\\0").replace(/\t/g,"\\t").replace(/\n/g,"\\n").replace(/\r/g,"\\r").replace(/[\x00-\x0F]/g,function(t){return"\\x0"+i(t)}).replace(/[\x10-\x1F\x7F-\x9F]/g,function(t){return"\\x"+i(t)})}function o(t){return r[t.type](t)}return"Expected "+function(t){var e,r,i=t.map(o);if(i.sort(),i.length>0){for(e=1,r=1;e<i.length;e++)i[e-1]!==i[e]&&(i[r]=i[e],r++);i.length=r}switch(i.length){case 1:return i[0];case 2:return i[0]+" or "+i[1];default:return i.slice(0,-1).join(", ")+", or "+i[i.length-1]}}(t)+" but "+function(t){return t?'"'+n(t)+'"':"end of input"}(e)+" found."};const i=0xffffffffffffffffn;function n(t,e){return 0xffffffffffffffffn&(t<<e|t>>64n-e)}function s(t,e){return t*e&i}const o=(a=0xa187eb39cdcaed8f31c4b365b102e01en,function(){let t=BigInt(a&i),e=BigInt(a>>64n&i);const r=s(n(s(t,5n),7n),9n);return e^=t,t=(n(t,24n)^e^e<<16n)&i,e=n(e,37n),a=e<<64n|t,r});var a;const h=Array.from({length:2},()=>Array.from({length:6},()=>Array.from({length:128},()=>o()))),l=Array.from({length:8},()=>o()),u=Array.from({length:16},()=>o()),c=o(),f="w",_="b",p="p",g="b",d="r",m="q",v="k",b="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";class E{color;from;to;piece;captured;promotion;flags;san;lan;before;after;constructor(t,e){const{color:r,piece:i,from:n,to:s,flags:o,captured:a,promotion:h}=e,l=U(n),u=U(s);this.color=r,this.piece=i,this.from=l,this.to=u,this.san=t._moveToSan(e,t._moves({legal:!0})),this.lan=l+u,this.before=t.fen(),t._makeMove(e),this.after=t.fen(),t._undoMove(),this.flags="";for(const t in S)S[t]&o&&(this.flags+=k[t]);a&&(this.captured=a),h&&(this.promotion=h,this.lan+=h)}isCapture(){return this.flags.indexOf(k.CAPTURE)>-1}isPromotion(){return this.flags.indexOf(k.PROMOTION)>-1}isEnPassant(){return this.flags.indexOf(k.EP_CAPTURE)>-1}isKingsideCastle(){return this.flags.indexOf(k.KSIDE_CASTLE)>-1}isQueensideCastle(){return this.flags.indexOf(k.QSIDE_CASTLE)>-1}isBigPawn(){return this.flags.indexOf(k.BIG_PAWN)>-1}}const C=-1,k={NORMAL:"n",CAPTURE:"c",BIG_PAWN:"b",EP_CAPTURE:"e",PROMOTION:"p",KSIDE_CASTLE:"k",QSIDE_CASTLE:"q",NULL_MOVE:"-"},S={NORMAL:1,CAPTURE:2,BIG_PAWN:4,EP_CAPTURE:8,PROMOTION:16,KSIDE_CASTLE:32,QSIDE_CASTLE:64,NULL_MOVE:128},y={Event:"?",Site:"?",Date:"????.??.??",Round:"?",White:"?",Black:"?",Result:"*"},A={...y,WhiteTitle:null,BlackTitle:null,WhiteElo:null,BlackElo:null,WhiteUSCF:null,BlackUSCF:null,WhiteNA:null,BlackNA:null,WhiteType:null,BlackType:null,EventDate:null,EventSponsor:null,Section:null,Stage:null,Board:null,Opening:null,Variation:null,SubVariation:null,ECO:null,NIC:null,Time:null,UTCTime:null,UTCDate:null,TimeControl:null,SetUp:null,FEN:null,Termination:null,Annotator:null,Mode:null,PlyCount:null},P={a8:0,b8:1,c8:2,d8:3,e8:4,f8:5,g8:6,h8:7,a7:16,b7:17,c7:18,d7:19,e7:20,f7:21,g7:22,h7:23,a6:32,b6:33,c6:34,d6:35,e6:36,f6:37,g6:38,h6:39,a5:48,b5:49,c5:50,d5:51,e5:52,f5:53,g5:54,h5:55,a4:64,b4:65,c4:66,d4:67,e4:68,f4:69,g4:70,h4:71,a3:80,b3:81,c3:82,d3:83,e3:84,f3:85,g3:86,h3:87,a2:96,b2:97,c2:98,d2:99,e2:100,f2:101,g2:102,h2:103,a1:112,b1:113,c1:114,d1:115,e1:116,f1:117,g1:118,h1:119},w={b:[16,32,17,15],w:[-16,-32,-17,-15]},N={n:[-18,-33,-31,-14,18,33,31,14],b:[-17,-15,17,15],r:[-16,1,16,-1],q:[-17,-16,-15,1,17,16,15,-1],k:[-17,-16,-15,1,17,16,15,-1]},T=[20,0,0,0,0,0,0,24,0,0,0,0,0,0,20,0,0,20,0,0,0,0,0,24,0,0,0,0,0,20,0,0,0,0,20,0,0,0,0,24,0,0,0,0,20,0,0,0,0,0,0,20,0,0,0,24,0,0,0,20,0,0,0,0,0,0,0,0,20,0,0,24,0,0,20,0,0,0,0,0,0,0,0,0,0,20,2,24,2,20,0,0,0,0,0,0,0,0,0,0,0,2,53,56,53,2,0,0,0,0,0,0,24,24,24,24,24,24,56,0,56,24,24,24,24,24,24,0,0,0,0,0,0,2,53,56,53,2,0,0,0,0,0,0,0,0,0,0,0,20,2,24,2,20,0,0,0,0,0,0,0,0,0,0,20,0,0,24,0,0,20,0,0,0,0,0,0,0,0,20,0,0,0,24,0,0,0,20,0,0,0,0,0,0,20,0,0,0,0,24,0,0,0,0,20,0,0,0,0,20,0,0,0,0,0,24,0,0,0,0,0,20,0,0,20,0,0,0,0,0,0,24,0,0,0,0,0,0,20],I=[17,0,0,0,0,0,0,16,0,0,0,0,0,0,15,0,0,17,0,0,0,0,0,16,0,0,0,0,0,15,0,0,0,0,17,0,0,0,0,16,0,0,0,0,15,0,0,0,0,0,0,17,0,0,0,16,0,0,0,15,0,0,0,0,0,0,0,0,17,0,0,16,0,0,15,0,0,0,0,0,0,0,0,0,0,17,0,16,0,15,0,0,0,0,0,0,0,0,0,0,0,0,17,16,15,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0,0,0,-15,-16,-17,0,0,0,0,0,0,0,0,0,0,0,0,-15,0,-16,0,-17,0,0,0,0,0,0,0,0,0,0,-15,0,0,-16,0,0,-17,0,0,0,0,0,0,0,0,-15,0,0,0,-16,0,0,0,-17,0,0,0,0,0,0,-15,0,0,0,0,-16,0,0,0,0,-17,0,0,0,0,-15,0,0,0,0,0,-16,0,0,0,0,0,-17,0,0,-15,0,0,0,0,0,0,-16,0,0,0,0,0,0,-17],O={p:1,n:2,b:4,r:8,q:16,k:32},L=["n",g,d,m],q={[v]:S.KSIDE_CASTLE,[m]:S.QSIDE_CASTLE},K={w:[{square:P.a1,flag:S.QSIDE_CASTLE},{square:P.h1,flag:S.KSIDE_CASTLE}],b:[{square:P.a8,flag:S.QSIDE_CASTLE},{square:P.h8,flag:S.KSIDE_CASTLE}]},M={b:1,w:6},x="--";function R(t){return t>>4}function F(t){return 15&t}function D(t){return-1!=="0123456789".indexOf(t)}function U(t){const e=F(t),r=R(t);return"abcdefgh".substring(e,e+1)+"87654321".substring(r,r+1)}function $(t){return t===f?_:f}function Q(t,e,r,i,n,s=void 0,o=S.NORMAL){const a=R(i);if(n!==p||7!==a&&0!==a)t.push({color:e,from:r,to:i,piece:n,captured:s,flags:o});else for(let a=0;a<L.length;a++){const h=L[a];t.push({color:e,from:r,to:i,piece:n,captured:s,promotion:h,flags:o|S.PROMOTION})}}function B(t){let e=t.charAt(0);if(e>="a"&&e<="h"){if(t.match(/[a-h]\d.*[a-h]\d/))return;return p}return e=e.toLowerCase(),"o"===e?v:e}function j(t){return t.replace(/=/,"").replace(/[+#]?[?!]*$/,"")}return class{_board=new Array(128);_turn=f;_header={};_kings={w:C,b:C};_epSquare=-1;_halfMoves=0;_moveNumber=0;_history=[];_comments={};_castling={w:0,b:0};_hash=0n;_positionCount=new Map;constructor(t=b,{skipValidation:e=!1}={}){this.load(t,{skipValidation:e})}clear({preserveHeaders:t=!1}={}){this._board=new Array(128),this._kings={w:C,b:C},this._turn=f,this._castling={w:0,b:0},this._epSquare=C,this._halfMoves=0,this._moveNumber=1,this._history=[],this._comments={},this._header=t?this._header:{...A},this._hash=this._computeHash(),this._positionCount=new Map,this._header.SetUp=null,this._header.FEN=null}load(t,{skipValidation:e=!1,preserveHeaders:r=!1}={}){let i=t.split(/\s+/);if(i.length>=2&&i.length<6){const e=["-","-","0","1"];t=i.concat(e.slice(-(6-i.length))).join(" ")}if(i=t.split(/\s+/),!e){const{ok:e,error:r}=function(t){const e=t.split(/\s+/);if(6!==e.length)return{ok:!1,error:"Invalid FEN: must contain six space-delimited fields"};const r=parseInt(e[5],10);if(isNaN(r)||r<=0)return{ok:!1,error:"Invalid FEN: move number must be a positive integer"};const i=parseInt(e[4],10);if(isNaN(i)||i<0)return{ok:!1,error:"Invalid FEN: half move counter number must be a non-negative integer"};if(!/^(-|[abcdefgh][36])$/.test(e[3]))return{ok:!1,error:"Invalid FEN: en-passant square is invalid"};if(/[^kKqQ-]/.test(e[2]))return{ok:!1,error:"Invalid FEN: castling availability is invalid"};if(!/^(w|b)$/.test(e[1]))return{ok:!1,error:"Invalid FEN: side-to-move is invalid"};const n=e[0].split("/");if(8!==n.length)return{ok:!1,error:"Invalid FEN: piece data does not contain 8 '/'-delimited rows"};for(let t=0;t<n.length;t++){let e=0,r=!1;for(let i=0;i<n[t].length;i++)if(D(n[t][i])){if(r)return{ok:!1,error:"Invalid FEN: piece data is invalid (consecutive number)"};e+=parseInt(n[t][i],10),r=!0}else{if(!/^[prnbqkPRNBQK]$/.test(n[t][i]))return{ok:!1,error:"Invalid FEN: piece data is invalid (invalid piece)"};e+=1,r=!1}if(8!==e)return{ok:!1,error:"Invalid FEN: piece data is invalid (too many squares in rank)"}}if("3"==e[3][1]&&"w"==e[1]||"6"==e[3][1]&&"b"==e[1])return{ok:!1,error:"Invalid FEN: illegal en-passant square"};const s=[{color:"white",regex:/K/g},{color:"black",regex:/k/g}];for(const{color:t,regex:r}of s){if(!r.test(e[0]))return{ok:!1,error:`Invalid FEN: missing ${t} king`};if((e[0].match(r)||[]).length>1)return{ok:!1,error:`Invalid FEN: too many ${t} kings`}}return Array.from(n[0]+n[7]).some(t=>"P"===t.toUpperCase())?{ok:!1,error:"Invalid FEN: some pawns are on the edge rows"}:{ok:!0}}(t);if(!e)throw new Error(r)}const n=i[0];let s=0;this.clear({preserveHeaders:r});for(let t=0;t<n.length;t++){const e=n.charAt(t);if("/"===e)s+=8;else if(D(e))s+=parseInt(e,10);else{const t=e<"a"?f:_;this._put({type:e.toLowerCase(),color:t},U(s)),s++}}this._turn=i[1],i[2].indexOf("K")>-1&&(this._castling.w|=S.KSIDE_CASTLE),i[2].indexOf("Q")>-1&&(this._castling.w|=S.QSIDE_CASTLE),i[2].indexOf("k")>-1&&(this._castling.b|=S.KSIDE_CASTLE),i[2].indexOf("q")>-1&&(this._castling.b|=S.QSIDE_CASTLE),this._epSquare="-"===i[3]?C:P[i[3]],this._halfMoves=parseInt(i[4],10),this._moveNumber=parseInt(i[5],10),this._hash=this._computeHash(),this._updateSetup(t),this._incPositionCount()}fen({forceEnpassantSquare:t=!1}={}){let e=0,r="";for(let t=P.a8;t<=P.h1;t++){if(this._board[t]){e>0&&(r+=e,e=0);const{color:i,type:n}=this._board[t];r+=i===f?n.toUpperCase():n.toLowerCase()}else e++;t+1&136&&(e>0&&(r+=e),t!==P.h1&&(r+="/"),e=0,t+=8)}let i="";this._castling[f]&S.KSIDE_CASTLE&&(i+="K"),this._castling[f]&S.QSIDE_CASTLE&&(i+="Q"),this._castling[_]&S.KSIDE_CASTLE&&(i+="k"),this._castling[_]&S.QSIDE_CASTLE&&(i+="q"),i=i||"-";let n="-";if(this._epSquare!==C)if(t)n=U(this._epSquare);else{const t=this._epSquare+(this._turn===f?16:-16),e=[t+1,t-1];for(const t of e){if(136&t)continue;const e=this._turn;if(this._board[t]?.color===e&&this._board[t]?.type===p){this._makeMove({color:e,from:t,to:this._epSquare,piece:p,captured:p,flags:S.EP_CAPTURE});const r=!this._isKingAttacked(e);if(this._undoMove(),r){n=U(this._epSquare);break}}}}return[r,this._turn,i,n,this._halfMoves,this._moveNumber].join(" ")}_pieceKey(t){if(!this._board[t])return 0n;const{color:e,type:r}=this._board[t],i={p:0,n:1,b:2,r:3,q:4,k:5}[r];return h[{w:0,b:1}[e]][i][t]}_epKey(){return this._epSquare===C?0n:l[7&this._epSquare]}_castlingKey(){const t=this._castling.w>>5|this._castling.b>>3;return u[t]}_computeHash(){let t=0n;for(let e=P.a8;e<=P.h1;e++)136&e?e+=7:this._board[e]&&(t^=this._pieceKey(e));return t^=this._epKey(),t^=this._castlingKey(),"b"===this._turn&&(t^=c),t}_updateSetup(t){this._history.length>0||(t!==b?(this._header.SetUp="1",this._header.FEN=t):(this._header.SetUp=null,this._header.FEN=null))}reset(){this.load(b)}get(t){return this._board[P[t]]}findPiece(t){const e=[];for(let r=P.a8;r<=P.h1;r++)136&r?r+=7:this._board[r]&&this._board[r]?.color===t.color&&this._board[r].color===t.color&&this._board[r].type===t.type&&e.push(U(r));return e}put({type:t,color:e},r){return!!this._put({type:t,color:e},r)&&(this._updateCastlingRights(),this._updateEnPassantSquare(),this._updateSetup(this.fen()),!0)}_set(t,e){this._hash^=this._pieceKey(t),this._board[t]=e,this._hash^=this._pieceKey(t)}_put({type:t,color:e},r){if(-1==="pnbrqkPNBRQK".indexOf(t.toLowerCase()))return!1;if(!(r in P))return!1;const i=P[r];if(t==v&&this._kings[e]!=C&&this._kings[e]!=i)return!1;const n=this._board[i];return n&&n.type===v&&(this._kings[n.color]=C),this._set(i,{type:t,color:e}),t===v&&(this._kings[e]=i),!0}_clear(t){this._hash^=this._pieceKey(t),delete this._board[t]}remove(t){const e=this.get(t);return this._clear(P[t]),e&&e.type===v&&(this._kings[e.color]=C),this._updateCastlingRights(),this._updateEnPassantSquare(),this._updateSetup(this.fen()),e}_updateCastlingRights(){this._hash^=this._castlingKey();const t=this._board[P.e1]?.type===v&&this._board[P.e1]?.color===f,e=this._board[P.e8]?.type===v&&this._board[P.e8]?.color===_;t&&this._board[P.a1]?.type===d&&this._board[P.a1]?.color===f||(this._castling.w&=-65),t&&this._board[P.h1]?.type===d&&this._board[P.h1]?.color===f||(this._castling.w&=-33),e&&this._board[P.a8]?.type===d&&this._board[P.a8]?.color===_||(this._castling.b&=-65),e&&this._board[P.h8]?.type===d&&this._board[P.h8]?.color===_||(this._castling.b&=-33),this._hash^=this._castlingKey()}_updateEnPassantSquare(){if(this._epSquare===C)return;const t=this._epSquare+(this._turn===f?-16:16),e=this._epSquare+(this._turn===f?16:-16),r=[e+1,e-1];if(null!==this._board[t]||null!==this._board[this._epSquare]||this._board[e]?.color!==$(this._turn)||this._board[e]?.type!==p)return this._hash^=this._epKey(),void(this._epSquare=C);r.some(t=>!(136&t)&&this._board[t]?.color===this._turn&&this._board[t]?.type===p)||(this._hash^=this._epKey(),this._epSquare=C)}_attacked(t,e,r){const i=[];for(let n=P.a8;n<=P.h1;n++){if(136&n){n+=7;continue}if(void 0===this._board[n]||this._board[n].color!==t)continue;const s=this._board[n],o=n-e;if(0===o)continue;const a=o+119;if(T[a]&O[s.type]){if(s.type===p){if(o>0&&s.color===f||o<=0&&s.color===_){if(!r)return!0;i.push(U(n))}continue}if("n"===s.type||"k"===s.type){if(r){i.push(U(n));continue}return!0}const t=I[a];let h=n+t,l=!1;for(;h!==e;){if(null!=this._board[h]){l=!0;break}h+=t}if(!l){if(r){i.push(U(n));continue}return!0}}}return!!r&&i}attackers(t,e){return e?this._attacked(e,P[t],!0):this._attacked(this._turn,P[t],!0)}_isKingAttacked(t){const e=this._kings[t];return-1!==e&&this._attacked($(t),e)}hash(){return this._hash.toString(16)}isAttacked(t,e){return this._attacked(e,P[t])}isCheck(){return this._isKingAttacked(this._turn)}inCheck(){return this.isCheck()}isCheckmate(){return this.isCheck()&&0===this._moves().length}isStalemate(){return!this.isCheck()&&0===this._moves().length}isInsufficientMaterial(){const t={b:0,n:0,r:0,q:0,k:0,p:0},e=[];let r=0,i=0;for(let n=P.a8;n<=P.h1;n++){if(i=(i+1)%2,136&n){n+=7;continue}const s=this._board[n];s&&(t[s.type]=s.type in t?t[s.type]+1:1,s.type===g&&e.push(i),r++)}if(2===r)return!0;if(3===r&&(1===t[g]||1===t.n))return!0;if(r===t[g]+2){let t=0;const r=e.length;for(let i=0;i<r;i++)t+=e[i];if(0===t||t===r)return!0}return!1}isThreefoldRepetition(){return this._getPositionCount(this._hash)>=3}isDrawByFiftyMoves(){return this._halfMoves>=100}isDraw(){return this.isDrawByFiftyMoves()||this.isStalemate()||this.isInsufficientMaterial()||this.isThreefoldRepetition()}isGameOver(){return this.isCheckmate()||this.isDraw()}moves({verbose:t=!1,square:e,piece:r}={}){const i=this._moves({square:e,piece:r});return t?i.map(t=>new E(this,t)):i.map(t=>this._moveToSan(t,i))}_moves({legal:t=!0,piece:e,square:r}={}){const i=r?r.toLowerCase():void 0,n=e?.toLowerCase(),s=[],o=this._turn,a=$(o);let h=P.a8,l=P.h1,u=!1;if(i){if(!(i in P))return[];h=l=P[i],u=!0}for(let t=h;t<=l;t++){if(136&t){t+=7;continue}if(!this._board[t]||this._board[t].color===a)continue;const{type:e}=this._board[t];let r;if(e===p){if(n&&n!==e)continue;r=t+w[o][0],this._board[r]||(Q(s,o,t,r,p),r=t+w[o][1],M[o]!==R(t)||this._board[r]||Q(s,o,t,r,p,void 0,S.BIG_PAWN));for(let e=2;e<4;e++)r=t+w[o][e],136&r||(this._board[r]?.color===a?Q(s,o,t,r,p,this._board[r].type,S.CAPTURE):r===this._epSquare&&Q(s,o,t,r,p,p,S.EP_CAPTURE))}else{if(n&&n!==e)continue;for(let i=0,n=N[e].length;i<n;i++){const n=N[e][i];for(r=t;r+=n,!(136&r);){if(this._board[r]){if(this._board[r].color===o)break;Q(s,o,t,r,e,this._board[r].type,S.CAPTURE);break}if(Q(s,o,t,r,e),"n"===e||e===v)break}}}}if(!(void 0!==n&&n!==v||u&&l!==this._kings[o])){if(this._castling[o]&S.KSIDE_CASTLE){const t=this._kings[o],e=t+2;this._board[t+1]||this._board[e]||this._attacked(a,this._kings[o])||this._attacked(a,t+1)||this._attacked(a,e)||Q(s,o,this._kings[o],e,v,void 0,S.KSIDE_CASTLE)}if(this._castling[o]&S.QSIDE_CASTLE){const t=this._kings[o],e=t-2;this._board[t-1]||this._board[t-2]||this._board[t-3]||this._attacked(a,this._kings[o])||this._attacked(a,t-1)||this._attacked(a,e)||Q(s,o,this._kings[o],e,v,void 0,S.QSIDE_CASTLE)}}if(!t||-1===this._kings[o])return s;const c=[];for(let t=0,e=s.length;t<e;t++)this._makeMove(s[t]),this._isKingAttacked(o)||c.push(s[t]),this._undoMove();return c}move(t,{strict:e=!1}={}){let r=null;if("string"==typeof t)r=this._moveFromSan(t,e);else if(null===t)r=this._moveFromSan(x,e);else if("object"==typeof t){const e=this._moves();for(let i=0,n=e.length;i<n;i++)if(t.from===U(e[i].from)&&t.to===U(e[i].to)&&(!("promotion"in e[i])||t.promotion===e[i].promotion)){r=e[i];break}}if(!r)throw"string"==typeof t?new Error(`Invalid move: ${t}`):new Error(`Invalid move: ${JSON.stringify(t)}`);if(this.isCheck()&&r.flags&S.NULL_MOVE)throw new Error("Null move not allowed when in check");const i=new E(this,r);return this._makeMove(r),this._incPositionCount(),i}_push(t){this._history.push({move:t,kings:{b:this._kings.b,w:this._kings.w},turn:this._turn,castling:{b:this._castling.b,w:this._castling.w},epSquare:this._epSquare,halfMoves:this._halfMoves,moveNumber:this._moveNumber})}_movePiece(t,e){this._hash^=this._pieceKey(t),this._board[e]=this._board[t],delete this._board[t],this._hash^=this._pieceKey(e)}_makeMove(t){const e=this._turn,r=$(e);if(this._push(t),t.flags&S.NULL_MOVE)return e===_&&this._moveNumber++,this._halfMoves++,this._turn=r,void(this._epSquare=C);if(this._hash^=this._epKey(),this._hash^=this._castlingKey(),t.captured&&(this._hash^=this._pieceKey(t.to)),this._movePiece(t.from,t.to),t.flags&S.EP_CAPTURE&&(this._turn===_?this._clear(t.to-16):this._clear(t.to+16)),t.promotion&&(this._clear(t.to),this._set(t.to,{type:t.promotion,color:e})),this._board[t.to].type===v){if(this._kings[e]=t.to,t.flags&S.KSIDE_CASTLE){const e=t.to-1,r=t.to+1;this._movePiece(r,e)}else if(t.flags&S.QSIDE_CASTLE){const e=t.to+1,r=t.to-2;this._movePiece(r,e)}this._castling[e]=0}if(this._castling[e])for(let r=0,i=K[e].length;r<i;r++)if(t.from===K[e][r].square&&this._castling[e]&K[e][r].flag){this._castling[e]^=K[e][r].flag;break}if(this._castling[r])for(let e=0,i=K[r].length;e<i;e++)if(t.to===K[r][e].square&&this._castling[r]&K[r][e].flag){this._castling[r]^=K[r][e].flag;break}if(this._hash^=this._castlingKey(),t.flags&S.BIG_PAWN){let i;i=e===_?t.to-16:t.to+16,(t.to-1&136||this._board[t.to-1]?.type!==p||this._board[t.to-1]?.color!==r)&&(t.to+1&136||this._board[t.to+1]?.type!==p||this._board[t.to+1]?.color!==r)?this._epSquare=C:(this._epSquare=i,this._hash^=this._epKey())}else this._epSquare=C;t.piece===p||t.flags&(S.CAPTURE|S.EP_CAPTURE)?this._halfMoves=0:this._halfMoves++,e===_&&this._moveNumber++,this._turn=r,this._hash^=c}undo(){const t=this._hash,e=this._undoMove();if(e){const r=new E(this,e);return this._decPositionCount(t),r}return null}_undoMove(){const t=this._history.pop();if(void 0===t)return null;this._hash^=this._epKey(),this._hash^=this._castlingKey();const e=t.move;this._kings=t.kings,this._turn=t.turn,this._castling=t.castling,this._epSquare=t.epSquare,this._halfMoves=t.halfMoves,this._moveNumber=t.moveNumber,this._hash^=this._epKey(),this._hash^=this._castlingKey(),this._hash^=c;const r=this._turn,i=$(r);if(e.flags&S.NULL_MOVE)return e;if(this._movePiece(e.to,e.from),e.piece&&(this._clear(e.from),this._set(e.from,{type:e.piece,color:r})),e.captured)if(e.flags&S.EP_CAPTURE){let t;t=r===_?e.to-16:e.to+16,this._set(t,{type:p,color:i})}else this._set(e.to,{type:e.captured,color:i});if(e.flags&(S.KSIDE_CASTLE|S.QSIDE_CASTLE)){let t,r;e.flags&S.KSIDE_CASTLE?(t=e.to+1,r=e.to-1):(t=e.to-2,r=e.to+1),this._movePiece(r,t)}return e}pgn({newline:t="\n",maxWidth:e=0}={}){const r=[];let i=!1;for(const e in this._header){this._header[e]&&r.push(`[${e} "${this._header[e]}"]`+t),i=!0}i&&this._history.length&&r.push(t);const n=t=>{const e=this._comments[this.fen()];if(void 0!==e){t=`${t}${t.length>0?" ":""}{${e}}`}return t},s=[];for(;this._history.length>0;)s.push(this._undoMove());const o=[];let a="";for(0===s.length&&o.push(n(""));s.length>0;){a=n(a);const t=s.pop();if(!t)break;if(this._history.length||"b"!==t.color)"w"===t.color&&(a.length&&o.push(a),a=this._moveNumber+".");else{const t=`${this._moveNumber}. ...`;a=a?`${a} ${t}`:t}a=a+" "+this._moveToSan(t,this._moves({legal:!0})),this._makeMove(t)}if(a.length&&o.push(n(a)),o.push(this._header.Result||"*"),0===e)return r.join("")+o.join(" ");const h=function(){return r.length>0&&" "===r[r.length-1]&&(r.pop(),!0)},l=function(i,n){for(const s of n.split(" "))if(s){if(i+s.length>e){for(;h();)i--;r.push(t),i=0}r.push(s),i+=s.length,r.push(" "),i++}return h()&&i--,i};let u=0;for(let i=0;i<o.length;i++)u+o[i].length>e&&o[i].includes("{")?u=l(u,o[i]):(u+o[i].length>e&&0!==i?(" "===r[r.length-1]&&r.pop(),r.push(t),u=0):0!==i&&(r.push(" "),u++),r.push(o[i]),u+=o[i].length);return r.join("")}header(...t){for(let e=0;e<t.length;e+=2)"string"==typeof t[e]&&"string"==typeof t[e+1]&&(this._header[t[e]]=t[e+1]);return this._header}setHeader(t,e){return this._header[t]=e??y[t]??null,this.getHeaders()}removeHeader(t){return t in this._header&&(this._header[t]=y[t]||null,!0)}getHeaders(){const t={};for(const[e,r]of Object.entries(this._header))null!==r&&(t[e]=r);return t}loadPgn(t,{strict:e=!1,newlineChar:i="\r?\n"}={}){"\r?\n"!==i&&(t=t.replace(new RegExp(i,"g"),"\n"));const n=r(t);this.reset();const s=n.headers;let o="";for(const t in s)"fen"===t.toLowerCase()&&(o=s[t]),this.header(t,s[t]);if(e){if("1"===s.SetUp){if(!("FEN"in s))throw new Error("Invalid PGN: FEN tag must be supplied with SetUp tag");this.load(s.FEN,{preserveHeaders:!0})}}else o&&this.load(o,{preserveHeaders:!0});let a=n.root;for(;a;){if(a.move){const t=this._moveFromSan(a.move,e);if(null==t)throw new Error(`Invalid move in PGN: ${a.move}`);this._makeMove(t),this._incPositionCount()}void 0!==a.comment&&(this._comments[this.fen()]=a.comment),a=a.variations[0]}const h=n.result;h&&Object.keys(this._header).length&&this._header.Result!==h&&this.setHeader("Result",h)}_moveToSan(t,e){let r="";if(t.flags&S.KSIDE_CASTLE)r="O-O";else if(t.flags&S.QSIDE_CASTLE)r="O-O-O";else{if(t.flags&S.NULL_MOVE)return x;if(t.piece!==p){const i=function(t,e){const r=t.from,i=t.to,n=t.piece;let s=0,o=0,a=0;for(let t=0,h=e.length;t<h;t++){const h=e[t].from,l=e[t].to;n===e[t].piece&&r!==h&&i===l&&(s++,R(r)===R(h)&&o++,F(r)===F(h)&&a++)}return s>0?o>0&&a>0?U(r):a>0?U(r).charAt(1):U(r).charAt(0):""}(t,e);r+=t.piece.toUpperCase()+i}t.flags&(S.CAPTURE|S.EP_CAPTURE)&&(t.piece===p&&(r+=U(t.from)[0]),r+="x"),r+=U(t.to),t.promotion&&(r+="="+t.promotion.toUpperCase())}return this._makeMove(t),this.isCheck()&&(this.isCheckmate()?r+="#":r+="+"),this._undoMove(),r}_moveFromSan(t,e=!1){let r=j(t);if(e||("0-0"===r?r="O-O":"0-0-0"===r&&(r="O-O-O")),r==x){return{color:this._turn,from:0,to:0,piece:"k",flags:S.NULL_MOVE}}let i,n,s,o,a,h=B(r),l=this._moves({legal:!0,piece:h});for(let t=0,e=l.length;t<e;t++)if(r===j(this._moveToSan(l[t],l)))return l[t];if(e)return null;let u=!1;if(n=r.match(/([pnbrqkPNBRQK])?([a-h][1-8])x?-?([a-h][1-8])([qrbnQRBN])?/),n?(i=n[1],s=n[2],o=n[3],a=n[4],1==s.length&&(u=!0)):(n=r.match(/([pnbrqkPNBRQK])?([a-h]?[1-8]?)x?-?([a-h][1-8])([qrbnQRBN])?/),n&&(i=n[1],s=n[2],o=n[3],a=n[4],1==s.length&&(u=!0))),h=B(r),l=this._moves({legal:!0,piece:i||h}),!o)return null;for(let t=0,e=l.length;t<e;t++)if(s){if(!(i&&i.toLowerCase()!=l[t].piece||P[s]!=l[t].from||P[o]!=l[t].to||a&&a.toLowerCase()!=l[t].promotion))return l[t];if(u){const e=U(l[t].from);if(!(i&&i.toLowerCase()!=l[t].piece||P[o]!=l[t].to||s!=e[0]&&s!=e[1]||a&&a.toLowerCase()!=l[t].promotion))return l[t]}}else if(r===j(this._moveToSan(l[t],l)).replace("x",""))return l[t];return null}ascii(){let t="   +------------------------+\n";for(let e=P.a8;e<=P.h1;e++){if(0===F(e)&&(t+=" "+"87654321"[R(e)]+" |"),this._board[e]){const r=this._board[e].type;t+=" "+(this._board[e].color===f?r.toUpperCase():r.toLowerCase())+" "}else t+=" . ";e+1&136&&(t+="|\n",e+=8)}return t+="   +------------------------+\n",t+="     a  b  c  d  e  f  g  h",t}perft(t){const e=this._moves({legal:!1});let r=0;const i=this._turn;for(let n=0,s=e.length;n<s;n++)this._makeMove(e[n]),this._isKingAttacked(i)||(t-1>0?r+=this.perft(t-1):r++),this._undoMove();return r}setTurn(t){return this._turn!=t&&(this.move("--"),!0)}turn(){return this._turn}board(){const t=[];let e=[];for(let r=P.a8;r<=P.h1;r++)null==this._board[r]?e.push(null):e.push({square:U(r),type:this._board[r].type,color:this._board[r].color}),r+1&136&&(t.push(e),e=[],r+=8);return t}squareColor(t){if(t in P){const e=P[t];return(R(e)+F(e))%2==0?"light":"dark"}return null}history({verbose:t=!1}={}){const e=[],r=[];for(;this._history.length>0;)e.push(this._undoMove());for(;;){const i=e.pop();if(!i)break;t?r.push(new E(this,i)):r.push(this._moveToSan(i,this._moves())),this._makeMove(i)}return r}_getPositionCount(t){return this._positionCount.get(t)??0}_incPositionCount(){this._positionCount.set(this._hash,(this._positionCount.get(this._hash)??0)+1)}_decPositionCount(t){const e=this._positionCount.get(t)??0;1===e?this._positionCount.delete(t):this._positionCount.set(t,e-1)}_pruneComments(){const t=[],e={},r=t=>{t in this._comments&&(e[t]=this._comments[t])};for(;this._history.length>0;)t.push(this._undoMove());for(r(this.fen());;){const e=t.pop();if(!e)break;this._makeMove(e),r(this.fen())}this._comments=e}getComment(){return this._comments[this.fen()]}setComment(t){this._comments[this.fen()]=t.replace("{","[").replace("}","]")}deleteComment(){return this.removeComment()}removeComment(){const t=this._comments[this.fen()];return delete this._comments[this.fen()],t}getComments(){return this._pruneComments(),Object.keys(this._comments).map(t=>({fen:t,comment:this._comments[t]}))}deleteComments(){return this.removeComments()}removeComments(){return this._pruneComments(),Object.keys(this._comments).map(t=>{const e=this._comments[t];return delete this._comments[t],{fen:t,comment:e}})}setCastlingRights(t,e){for(const r of[v,m])void 0!==e[r]&&(e[r]?this._castling[t]|=q[r]:this._castling[t]&=~q[r]);this._updateCastlingRights();const r=this.getCastlingRights(t);return!(void 0!==e[v]&&e[v]!==r[v]||void 0!==e[m]&&e[m]!==r[m])}getCastlingRights(t){return{[v]:0!==(this._castling[t]&q[v]),[m]:0!==(this._castling[t]&q[m])}}moveNumber(){return this._moveNumber}}})();
+</script>
+<script>
+const DATA = {"lessons": [{"id": "mate1", "title": "Mate en 1", "icon": "♚", "online": [{"id": "m1a", "fen": "6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1", "tree": {"d1d8": 1}, "sol": ["Td8#"], "name": "El pasillo", "task": null, "hint": "El rey negro está encerrado por sus propios peones.", "expl": "Td8#. La torre ataca toda la octava fila y los peones no dejan escapar a su rey. Es el mate del pasillo."}, {"id": "m1b", "fen": "r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1", "tree": {"h5f7": 1}, "sol": ["Dxf7#"], "name": "El punto débil f7", "task": null, "hint": "La casilla f7 solo la defiende el rey.", "expl": "Dxf7#. La dama, protegida por el alfil, da mate. Es el famoso mate del pastor."}, {"id": "m1c", "fen": "6rk/6pp/7N/8/8/8/6PP/6K1 w - - 0 1", "tree": {"h6f7": 1}, "sol": ["Cf7#"], "name": "Mate de la coz", "task": null, "hint": "El caballo puede dar jaque saltando.", "expl": "Cf7#. El rey está rodeado por sus propias piezas y no puede moverse. Es el mate de la coz."}, {"id": "m1d", "fen": "7k/8/6K1/8/8/8/Q7/8 w - - 0 1", "tree": {"a2a8": 1}, "sol": ["Da8#"], "name": "Dama y rey", "task": null, "hint": "Usa la octava fila. Tu rey vigila g7 y h7.", "expl": "Da8#. Tu rey controla g7 y h7, y la dama toda la octava fila."}, {"id": "m1e", "fen": "1r4k1/8/8/8/8/8/5PPP/6K1 b - - 0 1", "tree": {"b8b1": 1}, "sol": ["Tb1#"], "name": "El pasillo de las blancas", "task": null, "hint": "Juegan negras. Mira la primera fila de las blancas.", "expl": "...Tb1#. El rey blanco está encerrado por sus propios peones: mate del pasillo."}, {"id": "m1f", "fen": "k7/7R/8/8/8/8/8/K5R1 w - - 0 1", "tree": {"g1g8": 1}, "sol": ["Tg8#"], "name": "Escalera", "task": null, "hint": "Una torre ya corta la séptima fila.", "expl": "Tg8#. Una torre encierra al rey y la otra da el mate: es la escalera de torres."}], "paper": [{"id": "m1g", "fen": "5rk1/5p1p/6pQ/8/8/8/1B6/6K1 w - - 0 1", "tree": {"h6g7": 1}, "sol": ["Dg7#"], "name": "Dama y alfil", "task": null, "hint": "El alfil de b2 apunta a g7.", "expl": "Dg7#. La dama está protegida por el alfil de la gran diagonal."}, {"id": "m1h", "fen": "k7/2P5/1K6/8/8/8/8/8 w - - 0 1", "tree": {"c7c8q": 1, "c7c8r": 1}, "sol": ["c8=D#"], "name": "Coronar con mate", "task": null, "hint": "Un peón que llega al final se convierte en otra pieza.", "expl": "c8=D# (también c8=T#). Coronar dando mate."}, {"id": "m1i", "fen": "6k1/5p1p/5PpQ/8/8/8/8/6K1 w - - 0 1", "tree": {"h6g7": 1}, "sol": ["Dg7#"], "name": "El peón ayuda", "task": null, "hint": "El peón de f6 protege una casilla clave.", "expl": "Dg7#. El peón de f6 protege a la dama."}, {"id": "m1j", "fen": "7k/7p/5N2/8/8/8/8/6RK w - - 0 1", "tree": {"g1g8": 1}, "sol": ["Tg8#"], "name": "Torre y caballo", "task": null, "hint": "El caballo de f6 vigila g8.", "expl": "Tg8#. La torre da jaque y el caballo la protege."}], "task": "Da jaque mate en una jugada.", "intro": ["El jaque mate es atacar al rey de forma que no pueda escapar, ni taparse, ni capturar a quien le ataca.", "Antes de mover, pregúntate: ¿a qué casillas puede huir el rey rival? ¿Las controlo todas?"]}, {"id": "mate2", "title": "Mate en 2", "icon": "♛", "online": [{"id": "m2a", "fen": "7k/8/8/8/8/8/R7/1R4K1 w - - 0 1", "tree": {"a2a7": {"r": "h8g8", "n": {"b1b8": 1}}, "b1b7": {"r": "h8g8", "n": {"a2a8": 1}}}, "sol": ["Ta7", "Rg8", "Tb8#"], "name": "Escalera de torres", "task": null, "hint": "Primero encierra al rey en la última fila.", "expl": "Ta7 (o Tb7) corta la séptima fila. El rey solo puede moverse por la octava y llega Tb8#."}, {"id": "m2b", "fen": "5r1k/6pp/7N/3Q4/8/8/6PP/6K1 w - - 0 1", "tree": {"d5g8": {"r": "f8g8", "n": {"h6f7": 1}}}, "sol": ["Dg8+", "Txg8", "Cf7#"], "name": "Sacrificio y coz", "task": null, "hint": "Un sacrificio de dama obliga al rival a encerrar a su propio rey.", "expl": "Dg8+! Txg8 y Cf7#. Sacrificas la dama para dar el mate de la coz."}, {"id": "m2c", "fen": "r5k1/5ppp/8/8/8/8/1R3PPP/1R4K1 w - - 0 1", "tree": {"b2b8": {"r": "a8b8", "n": {"b1b8": 1}}}, "sol": ["Tb8+", "Txb8", "Txb8#"], "name": "Torres dobladas", "task": null, "hint": "Dos torres en la misma columna son muy fuertes.", "expl": "Tb8+ Txb8 Txb8#. La segunda torre remata."}, {"id": "m2d", "fen": "1r4k1/1r3ppp/8/8/8/8/5PPP/R5K1 b - - 0 1", "tree": {"b7b1": {"r": "a1b1", "n": {"b8b1": 1}}}, "sol": ["Tb1+", "Txb1", "Txb1#"], "name": "Torres negras", "task": null, "hint": "Juegan negras. Tienes dos torres en la columna b.", "expl": "...Tb1+ Txb1 Txb1#. La segunda torre remata."}, {"id": "m2g", "fen": "2k5/8/2K5/8/8/8/8/1R6 w - - 0 1", "tree": {"c6d6": {"r": "c8d8", "n": {"b1b8": 1}}}, "sol": ["Rd6", "Rd8", "Tb8#"], "name": "Oposición", "task": null, "hint": "Coloca tu rey justo enfrente del rey rival.", "expl": "Rd6. Los reyes quedan enfrentados (oposición). El rey negro solo puede ir a d8 y Tb8# es mate."}], "paper": [{"id": "m2i", "fen": "k7/8/2K5/8/8/8/8/6R1 w - - 0 1", "tree": {"c6c7": {"r": "a8a7", "n": {"g1a1": 1}}, "c6b6": {"r": "a8b8", "n": {"g1g8": 1}}}, "sol": ["Rc7", "Ra7", "Ta1#"], "name": "Rey y torre", "task": null, "hint": "Acerca tu rey para quitarle casillas al rey rival.", "expl": "Rc7 (o Rb6). Al negro solo le quedan jugadas de rey y la torre da mate en la primera u octava fila."}, {"id": "m2j", "fen": "7k/8/5K2/8/8/8/8/6R1 w - - 0 1", "tree": {"f6f7": {"r": "h8h7", "n": {"g1h1": 1}}}, "sol": ["Rf7", "Rh7", "Th1#"], "name": "Cuidado con el ahogado", "task": null, "hint": "¡Cuidado con ahogar! Deja una casilla libre al rey rival.", "expl": "Rf7. El rey negro solo puede ir a h7 y llega Th1#."}, {"id": "m2l", "fen": "k7/8/2K5/8/8/8/8/7Q w - - 0 1", "tree": {"c6c7": {"r": "a8a7", "n": {"h1b7": 1, "h1a1": 1}}, "c6b6": {"r": "a8b8", "n": {"h1h8": 1, "h1b7": 1}}, "h1h7": {"r": "a8b8", "n": {"h7b7": 1}}, "h1b1": {"r": "a8a7", "n": {"b1b7": 1}}}, "sol": ["Rc7+", "Ra7", "Db7#"], "name": "Dama lejana", "task": null, "hint": "Si mueves tu rey, la dama da jaque desde lejos.", "expl": "Rc7+ (jaque descubierto) Ra7 y Db7#. También valen Rb6+, Dh7 o Db1."}], "task": "Da jaque mate en dos jugadas.", "intro": ["Primero haces una jugada que obliga al rival a responder de una forma concreta. Después, das el mate.", "A veces la mejor primera jugada es un sacrificio: regalas una pieza para abrir el camino al mate.", "Cuidado con el ahogado: si el rival no puede mover y no está en jaque, la partida es tablas."]}, {"id": "fork", "title": "Horquilla", "icon": "♞", "online": [{"id": "f1", "fen": "r3k3/pp3ppp/8/1N3b2/8/8/PP3PPP/3R2K1 w - - 0 1", "tree": {"b5c7": {"r": "e8e7", "n": {"c7a8": 1}}, "b5d6": {"r": "e8f8", "n": {"d6f5": 1}}}, "sol": ["Cc7+", "Re7", "Cxa8"], "name": "Caballo saltarín", "task": null, "hint": "Busca una casilla donde el caballo ataque a la vez al rey y a la torre.", "expl": "Cc7+ ataca al rey y a la torre de a8. El rey se aparta y Cxa8. (Cd6+ también es horquilla: rey y alfil.)"}, {"id": "f2", "fen": "4k3/pp3ppp/4q3/1N6/8/8/PP3PPP/3Q2K1 w - - 0 1", "tree": {"b5c7": {"r": "e8e7", "n": {"c7e6": 1}}}, "sol": ["Cc7+", "Re7", "Cxe6"], "name": "Horquilla real", "task": null, "hint": "El caballo puede atacar a la vez al rey y a la dama.", "expl": "Cc7+ es una horquilla al rey y a la dama. El rey se aparta y Cxe6."}, {"id": "f3", "fen": "6k1/5ppp/2n1n3/8/3P4/8/5PPP/2B2BK1 w - - 0 1", "tree": {"d4d5": {"r": "c6e5", "n": {"d5e6": 1}}}, "sol": ["d5", "Ce5", "dxe6"], "name": "El peón valiente", "task": null, "hint": "Los peones también hacen horquillas.", "expl": "d5 ataca los dos caballos a la vez. Solo puede salvarse uno."}, {"id": "f5", "fen": "2n5/5kpp/8/8/8/8/r5PP/3RKB2 w - - 0 1", "tree": {"f1c4": {"r": "f7f6", "n": {"c4a2": 1}}}, "sol": ["Ac4+", "Rf6", "Axa2"], "name": "Alfil en diagonal", "task": null, "hint": "El jaque del alfil puede atacar algo más en la otra diagonal.", "expl": "Ac4+ da jaque y ataca la torre de a2. El rey se aparta y Axa2."}, {"id": "f7", "fen": "r5k1/4b1pp/1p6/8/8/8/P5PP/3Q2K1 w - - 0 1", "tree": {"d1d5": {"r": "g8h8", "n": {"d5a8": 1}}}, "sol": ["Dd5+", "Rh8", "Dxa8+"], "name": "Jaque y algo más", "task": null, "hint": "La dama ataca en muchas direcciones a la vez.", "expl": "Dd5+ da jaque y ataca la torre de a8 en la diagonal. El rey se aparta y Dxa8+."}], "paper": [{"id": "f6", "fen": "2r3k1/p4p1p/6pb/3N4/8/8/P4PPP/3R2K1 w - - 0 1", "tree": {"d5e7": {"r": "g8f8", "n": {"e7c8": 1}}}, "sol": ["Ce7+", "Rf8", "Cxc8"], "name": "Caballo al ataque", "task": null, "hint": "Busca un jaque de caballo que ataque también a la torre.", "expl": "Ce7+ ataca al rey y a la torre de c8. El rey se aparta y Cxc8."}], "task": "Haz una horquilla y gana material.", "intro": ["Una horquilla (o ataque doble) es cuando una pieza ataca a dos piezas enemigas a la vez.", "El rival solo puede salvar una. Si además una de ellas es el rey (jaque), está obligado a salvar al rey.", "El caballo es el rey de las horquillas, pero todas las piezas pueden hacerlas, ¡hasta los peones!"]}, {"id": "pin", "title": "Clavada y ensartada", "icon": "♝", "online": [{"id": "p3", "fen": "4k3/3q1ppp/8/8/P7/8/5PPP/R3KB2 w - - 0 1", "tree": {"f1b5": {"r": "d7b5", "n": {"a4b5": 1}}}, "sol": ["Ab5", "Dxb5", "axb5"], "name": "Clavada a la dama", "task": null, "hint": "Si atacas a la dama, ¿podrá apartarse? Mira qué hay detrás.", "expl": "Ab5 clava la dama contra su rey. Si Dxb5, axb5: ganas la dama a cambio del alfil."}, {"id": "p6", "fen": "4k3/pp3ppp/2n5/1B6/3P4/8/PP3PPP/6K1 w - - 0 1", "tree": {"d4d5": {"r": "e8d7", "n": {"d5c6": 1}}}, "sol": ["d5", "Rd7", "dxc6+"], "name": "Peón contra pieza clavada", "task": null, "hint": "El caballo de c6 no puede moverse: su rey está detrás.", "expl": "d5 ataca al caballo clavado. Aunque el rey se aparte, dxc6+ gana la pieza."}, {"id": "p4", "fen": "3rk3/5ppp/4q3/8/8/2N5/5PPP/R4RK1 w - - 0 1", "tree": {"f1e1": {"r": "e8f8", "n": {"e1e6": 1}}, "a1e1": {"r": "e6e7", "n": {"e1e7": 1}}}, "sol": ["Tfe1", "Rf8", "Txe6"], "name": "Clavada en columna", "task": null, "hint": "Pon una torre en la columna donde están la dama y el rey.", "expl": "Tfe1 (o Tae1) clava la dama contra el rey. Aunque el rey se aparte, Txe6."}, {"id": "p2", "fen": "8/8/3k3r/8/8/8/8/R3K3 w - - 0 1", "tree": {"a1a6": {"r": "d6e7", "n": {"a6h6": 1}}}, "sol": ["Ta6+", "Re7", "Txh6"], "name": "Ensartada con torre", "task": null, "hint": "Da jaque al rey en la sexta fila.", "expl": "Ta6+ es una ensartada: el rey se aparta y Txh6."}, {"id": "p5", "fen": "6r1/pp4n1/8/3k4/8/8/PP6/3BKR2 w - - 0 1", "tree": {"d1b3": {"r": "d5c6", "n": {"b3g8": 1}}}, "sol": ["Ab3+", "Rc6", "Axg8"], "name": "Rey delante", "task": null, "hint": "Da jaque con el alfil en la diagonal del rey.", "expl": "Ab3+. El rey se aparta y el alfil captura la torre de g8. Es una ensartada."}], "paper": [{"id": "p1", "fen": "q7/5ppp/2k5/7n/8/8/4BPPP/1Q4K1 w - - 0 1", "tree": {"e2f3": {"r": "c6d6", "n": {"f3a8": 1}}, "b1e4": {"r": "c6c7", "n": {"e4a8": 1}}}, "sol": ["Af3+", "Rd6", "Axa8"], "name": "Ensartada con alfil", "task": null, "hint": "Jaque en la gran diagonal. ¿Qué hay detrás del rey?", "expl": "Af3+ (o De4+). El rey se aparta y cae la dama de a8. Es una ensartada."}, {"id": "p7", "fen": "3q4/8/8/8/3k4/8/8/R3K3 w - - 0 1", "tree": {"a1d1": {"r": "d4c4", "n": {"d1d8": 1}}}, "sol": ["Td1+", "Rc4", "Txd8"], "name": "La dama detrás", "task": null, "hint": "Da jaque en la columna d. ¿Qué hay detrás del rey?", "expl": "Td1+. El rey se aparta y Txd8. Es una ensartada."}], "task": "Usa una clavada o una ensartada para ganar material.", "intro": ["Clavada: atacas una pieza que no puede apartarse porque detrás está su rey (o una pieza más valiosa).", "Ensartada: es al revés. Atacas al rey, el rey se aparta y capturas la pieza que tenía detrás.", "Las hacen las piezas que se mueven en línea: alfil, torre y dama."]}, {"id": "open", "title": "Principios de apertura", "icon": "♟", "online": [{"id": "o1", "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "tree": {"e2e4": 1, "d2d4": 1}, "sol": ["e4 o d4"], "name": "Ocupa el centro", "task": "Mueve un peón para ocupar el centro del tablero.", "hint": "Las casillas centrales son e4, d4, e5 y d5.", "expl": "e4 o d4 ocupan el centro y abren camino a la dama y a los alfiles."}, {"id": "o2", "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2", "tree": {"g1f3": 1, "b1c3": 1}, "sol": ["Cf3 o Cc3"], "name": "Caballos al centro", "task": "Desarrolla un caballo hacia el centro.", "hint": "Los caballos son más fuertes cerca del centro.", "expl": "Cf3 o Cc3. Los caballos rinden más en el centro. Cf3 además ataca el peón de e5."}, {"id": "o3", "fen": "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3", "tree": {"f1c4": 1, "f1b5": 1}, "sol": ["Ac4 o Ab5"], "name": "Alfil activo", "task": "Saca tu alfil a una casilla activa.", "hint": "Busca una casilla desde la que el alfil apunte al campo rival.", "expl": "Ac4 apunta a f7 y Ab5 presiona al caballo de c6. Las dos son buenas."}, {"id": "o4", "fen": "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 1 5", "tree": {"e1g1": 1}, "sol": ["0-0"], "name": "Rey a salvo", "task": "Pon tu rey a salvo.", "hint": "Hay una jugada especial que mueve el rey y la torre a la vez.", "expl": "0-0, el enroque. Protege al rey y saca la torre al juego. Para enrocar, arrastra el rey dos casillas hacia la torre."}, {"id": "o5", "fen": "r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 3 3", "tree": {"g7g6": 1, "d8e7": 1, "d8f6": 1, "g8h6": 1, "d7d5": 1}, "sol": ["g6 o De7 o Df6"], "name": "¡Cuidado con f7!", "task": "Te amenazan con mate. Defiéndete.", "hint": "La dama y el alfil atacan f7. Tapa la diagonal, defiende f7 o ataca a la dama.", "expl": "g6 es la mejor idea: defiende y además ataca a la dama blanca. También valen De7, Df6, Ch6 o d5."}], "paper": [{"id": "o6", "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2", "tree": {"b8c6": 1, "d7d6": 1}, "sol": ["Cc6 o d6"], "name": "Defiende tu peón", "task": "Tu peón de e5 está atacado. Defiéndelo.", "hint": "Defiende el peón y, si puedes, saca una pieza a la vez.", "expl": "Cc6 defiende el peón y desarrolla una pieza. d6 también lo defiende."}, {"id": "o7", "fen": "rnbqkbnr/ppp2ppp/4p3/3p4/2PP4/2N5/PP2PPPP/R1BQKBNR b KQkq - 1 3", "tree": {"g8f6": 1, "f8e7": 1, "f8b4": 1}, "sol": ["Cf6 o Ae7 o Ab4"], "name": "Desarrolla", "task": "Desarrolla una pieza menor (caballo o alfil).", "hint": "Las piezas menores son los caballos y los alfiles.", "expl": "Cf6, Ae7 o Ab4. Saca piezas antes de mover la dama."}, {"id": "o8", "fen": "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 b kq - 0 5", "tree": {"e8g8": 1}, "sol": ["0-0"], "name": "Enroque negro", "task": "Pon tu rey a salvo.", "hint": "Hay una jugada especial que mueve el rey y la torre a la vez.", "expl": "0-0. Rey a salvo y torre activa."}], "task": "", "intro": ["1. Ocupa el centro con tus peones.", "2. Saca pronto los caballos y los alfiles.", "3. Enroca para poner tu rey a salvo.", "4. No saques la dama demasiado pronto y no muevas la misma pieza muchas veces."]}]};
+
+</script>
+<script>
+"use strict";
+/* ---------- utilities & storage ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const FILES = "abcdefgh";
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const AVATARS = ["🦊","🐻","🐼","🦁","🦉","🐸","🐙","🦄","🐯","🐨","🐧","🐢","🦖","🐝","🚀","⭐"];
+let settings = store.get("ajz.settings", {name:"", avatar:"🦊", voice:true});
+let progressAll = store.get("ajz.progress", {});
+function pkey(){ return (settings.name || "_").trim().toLowerCase(); }
+function prog(){ const k = pkey(); if(!progressAll[k]) progressAll[k] = {pieces:{}, solved:{}}; return progressAll[k]; }
+function saveProg(){ store.set("ajz.progress", progressAll); }
+function saveSettings(){ store.set("ajz.settings", settings); }
+function nm(){ return (settings.name || "").trim(); }
+function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+
+/* ---------- pieces (original SVG) ---------- */
+function pieceSVG(code){
+  const white = code[0] === "w", t = code[1];
+  const F = white ? "#FFFBF5" : "#403D32", S = white ? "#403D32" : "#24221c", D = white ? "#403D32" : "#F5EBDD";
+  const st = `fill="${F}" stroke="${S}" stroke-width="1.6" stroke-linejoin="round"`;
+  let g = "";
+  if(t === "P") g = `<path ${st} d="M17 36 C17 29 19.5 24.5 20 21.5 h5 C25.5 24.5 28 29 28 36 z"/><path ${st} d="M18 18.5 h9 l-1.2 3 h-6.6 z"/><circle ${st} cx="22.5" cy="13" r="5.5"/><rect ${st} x="12.5" y="35" width="20" height="5" rx="1.5"/>`;
+  if(t === "R") g = `<path ${st} d="M14.5 35 L16 18.5 h13 L30.5 35 z"/><path ${st} d="M12.5 18.5 V10 h4 v3 h3.5 V10 h5 v3 h3.5 V10 h4 V18.5 z"/><rect ${st} x="11" y="35" width="23" height="5" rx="1.5"/><path d="M16.5 22.5 h12 M16 30 h13" stroke="${D}" stroke-width="1.3"/>`;
+  if(t === "B") g = `<path ${st} d="M22.5 8.5 C16 13.5 14.5 19 16.5 24 C17.5 27 19 29 19 30.5 h7 C26 29 27.5 27 28.5 24 C30.5 19 29 13.5 22.5 8.5 z"/><circle ${st} cx="22.5" cy="6.5" r="2.4"/><path ${st} d="M17.5 30.5 h10 l1.5 4.5 h-13 z"/><rect ${st} x="12" y="35" width="21" height="5" rx="1.5"/><path d="M25.8 13.5 L20.8 19.5" stroke="${D}" stroke-width="1.8" stroke-linecap="round"/>`;
+  if(t === "N") g = `<path ${st} d="M14.5 35 C14.5 30 16.5 27 19.5 24.2 C17 24.6 14.6 25.2 12.6 24.2 C10.4 23.2 10.2 20.6 11.6 19 L18.8 11.4 C18.9 9.4 18.4 7.6 17.8 6 C20 6.6 22 8 23.2 9.6 C29.4 10.2 34 15.4 34 23.2 C34 28.2 32.2 32 31.2 35 z"/><rect ${st} x="11" y="35" width="23" height="5" rx="1.5"/><circle cx="19.6" cy="15.4" r="1.4" fill="${D}"/><circle cx="13.4" cy="21.4" r=".8" fill="${D}"/><path d="M26.5 12.8 C30.2 15.6 31.6 20.2 31 26.5" stroke="${D}" stroke-width="1.3" fill="none" stroke-linecap="round"/>`;
+  if(t === "Q") g = `<path ${st} d="M13 33.5 L9.5 15.5 L16 23 L16 12 L21 21 L22.5 9.5 L24 21 L29 12 L29 23 L35.5 15.5 L32 33.5 z"/><circle ${st} cx="9.5" cy="13.6" r="2.2"/><circle ${st} cx="16" cy="10.2" r="2.2"/><circle ${st} cx="22.5" cy="7.6" r="2.2"/><circle ${st} cx="29" cy="10.2" r="2.2"/><circle ${st} cx="35.5" cy="13.6" r="2.2"/><rect ${st} x="10.5" y="35" width="24" height="5" rx="1.5"/><path d="M13.6 30 h17.8" stroke="${D}" stroke-width="1.3"/>`;
+  if(t === "K") g = `<rect ${st} x="21.2" y="4.5" width="2.6" height="10" rx=".6"/><rect ${st} x="18" y="7.4" width="9" height="2.6" rx=".6"/><path ${st} d="M13 33.5 C8.5 27 9 20 14 18.4 C17.5 17.3 20.5 19.5 22.5 22.6 C24.5 19.5 27.5 17.3 31 18.4 C36 20 36.5 27 32 33.5 z"/><path ${st} d="M19.2 22 C19.2 17.6 20.8 15 22.5 15 C24.2 15 25.8 17.6 25.8 22 L22.5 25 z"/><rect ${st} x="10.5" y="35" width="24" height="5" rx="1.5"/><path d="M13.6 30 h17.8" stroke="${D}" stroke-width="1.3"/>`;
+  return `<svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg">${g}</svg>`;
+}
+const STAR_SVG = `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="M20 3 L24.9 14.2 L37 15.3 L27.8 23.3 L30.6 35.2 L20 28.9 L9.4 35.2 L12.2 23.3 L3 15.3 L15.1 14.2 Z" fill="#E7B23E" stroke="#B65332" stroke-width="2" stroke-linejoin="round"/></svg>`;
+
+/* ---------- sound & voice ---------- */
+let actx = null;
+function ac(){ if(!actx){ try{ actx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){} } if(actx && actx.state === "suspended") actx.resume(); return actx; }
+function tone(freq, start, dur, type="sine", vol=0.18, slideTo=null){
+  const a = ac(); if(!a) return;
+  const o = a.createOscillator(), g = a.createGain(), t = a.currentTime + start;
+  o.type = type; o.frequency.setValueAtTime(freq, t);
+  if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + 0.05);
+}
+const sfx = {
+  move(){ tone(520, 0, .08, "triangle", .12); },
+  good(){ tone(660, 0, .14, "triangle", .16); tone(880, .1, .2, "triangle", .16); },
+  win(){ [523,659,784,1047].forEach((f,i)=>tone(f, i*.12, .28, "triangle", .17)); },
+  soft(){ tone(330, 0, .22, "sine", .14, 250); },          // error suave
+  neutral(){ tone(440, 0, .12, "sine", .1); }
+};
+let esVoice = null;
+function loadVoices(){
+  if(!("speechSynthesis" in window)) return;
+  const vs = speechSynthesis.getVoices();
+  esVoice = vs.find(v => /es[-_]ES/i.test(v.lang)) || vs.find(v => /^es/i.test(v.lang)) || null;
+}
+if("speechSynthesis" in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+function say(text){
+  if(!settings.voice || !("speechSynthesis" in window) || !text) return;
+  try{
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "es-ES"; if(esVoice) u.voice = esVoice; u.rate = 0.95; u.pitch = 1.1;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function praise(){
+  const n = nm();
+  const a = n ? [`¡Muy bien, ${n}!`, `¡Genial, ${n}!`, `¡Bravo, ${n}!`, `¡Eso es, ${n}!`, `¡Fenomenal, ${n}!`] : ["¡Muy bien!","¡Genial!","¡Bravo!","¡Eso es!","¡Fenomenal!"];
+  return pick(a);
+}
+
+/* ---------- confetti ---------- */
+const cv = $("#confetti"), cx = cv.getContext("2d");
+let parts = [], confRAF = null;
+function confetti(n = 140){
+  if(parts.length > 300) parts = parts.slice(-150);
+  cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio;
+  const cols = ["#B65332","#657258","#C99568","#E7B23E","#A94F35","#F5EBDD"];
+  for(let i=0;i<n;i++) parts.push({x: Math.random()*cv.width, y: -Math.random()*cv.height*.4, vx:(Math.random()-.5)*4*devicePixelRatio, vy:(2+Math.random()*4)*devicePixelRatio, r: (4+Math.random()*5)*devicePixelRatio, a: Math.random()*6, va:(Math.random()-.5)*.3, c: pick(cols)});
+  if(!confRAF) loopConf();
+}
+function loopConf(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  parts.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += .05*devicePixelRatio; p.a += p.va;
+    cx.save(); cx.translate(p.x,p.y); cx.rotate(p.a); cx.fillStyle = p.c; cx.fillRect(-p.r/2,-p.r/4,p.r,p.r/2); cx.restore(); });
+  parts = parts.filter(p => p.y < cv.height + 20);
+  confRAF = parts.length ? requestAnimationFrame(loopConf) : (cx.clearRect(0,0,cv.width,cv.height), null);
+}
+
+/* ---------- board component ---------- */
+class Board{
+  constructor(el, opts){
+    this.el = el; this.o = Object.assign({flip:false, canPick:()=>true, targets:()=>[], showTargets:true, onMove:()=>false}, opts);
+    this.pos = {}; this.sel = null; this.extra = {};
+    el.innerHTML = `<div class="board"></div>`; this.bd = el.firstChild;
+    this.build(); this.bindPointer();
+  }
+  sqName(i){ const f = this.o.flip ? 7 - (i % 8) : i % 8, r = this.o.flip ? Math.floor(i/8) : 7 - Math.floor(i/8); return FILES[f] + (r+1); }
+  build(){
+    this.bd.innerHTML = ""; this.cells = {};
+    for(let i=0;i<64;i++){
+      const s = this.sqName(i), f = FILES.indexOf(s[0]), r = +s[1]-1;
+      const d = document.createElement("div");
+      d.className = "sq " + ((f + r) % 2 ? "l" : "d"); d.dataset.sq = s;
+      const col = i % 8, row = Math.floor(i/8);
+      if(row === 7) d.insertAdjacentHTML("beforeend", `<span class="co f">${s[0]}</span>`);
+      if(col === 0) d.insertAdjacentHTML("beforeend", `<span class="co r">${s[1]}</span>`);
+      this.bd.appendChild(d); this.cells[s] = d;
+    }
+  }
+  setFlip(f){ if(this.o.flip !== f){ this.o.flip = f; this.build(); } this.render(); }
+  setPosition(pos){ this.pos = Object.assign({}, pos); this.render(); }
+  render(){
+    for(const s in this.cells){
+      const c = this.cells[s];
+      c.querySelectorAll(".pce,.star,.dot,.ring").forEach(n => n.remove());
+      if(this.extra.stars && this.extra.stars.includes(s)) c.insertAdjacentHTML("beforeend", `<div class="star">${STAR_SVG}</div>`);
+      if(this.pos[s]) c.insertAdjacentHTML("beforeend", `<div class="pce">${pieceSVG(this.pos[s])}</div>`);
+    }
+    this.mark("sel", this.sel ? [this.sel] : []);
+  }
+  mark(cls, list){ for(const s in this.cells) this.cells[s].classList.toggle(cls, list.includes(s)); }
+  showDots(list){
+    for(const s in this.cells) this.cells[s].querySelectorAll(".dot,.ring").forEach(n=>n.remove());
+    list.forEach(s => this.cells[s].insertAdjacentHTML("beforeend", this.pos[s] ? `<div class="ring"></div>` : `<div class="dot"></div>`));
+  }
+  flash(s){ const c = this.cells[s]; if(!c) return; c.classList.remove("flash"); void c.offsetWidth; c.classList.add("flash"); }
+  select(s){ this.sel = s; this.mark("sel", s ? [s] : []); this.showDots(s && this.o.showTargets ? this.o.targets(s) : []); }
+  sqAt(x, y){ const e = document.elementFromPoint(x, y); const c = e && e.closest(".sq"); return c && this.bd.contains(c) ? c.dataset.sq : null; }
+  bindPointer(){
+    let drag = null;
+    this.bd.addEventListener("pointerdown", e => {
+      ac();
+      const s = this.sqAt(e.clientX, e.clientY); if(!s) return;
+      if(this.sel && s !== this.sel && !(this.pos[s] && this.o.canPick(s))){ const from = this.sel; this.select(null); this.o.onMove(from, s); return; }
+      if(this.pos[s] && this.o.canPick(s)){
+        e.preventDefault();
+        this.select(s);
+        const pc = this.cells[s].querySelector(".pce"), rect = this.cells[s].getBoundingClientRect();
+        const g = document.createElement("div"); g.className = "ghost"; g.style.width = g.style.height = rect.width + "px";
+        g.innerHTML = pieceSVG(this.pos[s]); g.style.left = e.clientX + "px"; g.style.top = e.clientY + "px"; g.style.display = "none";
+        document.body.appendChild(g);
+        drag = {from: s, g, pc, x: e.clientX, y: e.clientY, moved: false};
+        try{ this.bd.setPointerCapture(e.pointerId); }catch(_){}
+      } else if(this.sel){ this.select(null); }
+    });
+    this.bd.addEventListener("pointermove", e => {
+      if(!drag) return;
+      if(!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 6){ drag.moved = true; drag.g.style.display = "block"; drag.pc && drag.pc.classList.add("dragging"); }
+      if(drag.moved){ drag.g.style.left = e.clientX + "px"; drag.g.style.top = e.clientY + "px"; }
+    });
+    const end = e => {
+      if(!drag) return;
+      const d = drag; drag = null; d.g.remove(); d.pc && d.pc.classList.remove("dragging");
+      if(!d.moved) return; // tap: keep selected, wait for target tap
+      const to = this.sqAt(e.clientX, e.clientY);
+      this.select(null);
+      if(to && to !== d.from) this.o.onMove(d.from, to); else this.render();
+    };
+    this.bd.addEventListener("pointerup", end);
+    this.bd.addEventListener("pointercancel", e => { if(drag){ drag.g.remove(); drag.pc && drag.pc.classList.remove("dragging"); drag = null; this.render(); } });
+  }
+}
+
+/* ---------- navigation ---------- */
+function go(id){
+  $$(".screen").forEach(s => s.classList.toggle("active", s.id === id));
+  $$(".who").forEach(w => w.textContent = settings.avatar);
+  if(id === "moveMenu") renderPieceGrid();
+  if(id === "tacMenu") renderLessonGrid();
+  if(window.speechSynthesis) try{ speechSynthesis.cancel(); }catch(e){}
+  window.scrollTo(0,0);
+}
+document.addEventListener("click", e => { const b = e.target.closest("[data-go]"); if(b){ ac(); go(b.dataset.go); } });
+
+/* ---------- home ---------- */
+const nameIn = $("#name");
+nameIn.value = settings.name;
+nameIn.addEventListener("input", () => { settings.name = nameIn.value.slice(0,20); saveSettings(); });
+function renderAvatars(){
+  $("#avatars").innerHTML = AVATARS.map(a => `<button class="av ${a===settings.avatar?"on":""}" data-av="${a}" aria-label="avatar">${a}</button>`).join("");
+}
+$("#avatars").addEventListener("click", e => { const b = e.target.closest(".av"); if(!b) return; settings.avatar = b.dataset.av; saveSettings(); renderAvatars(); sfx.neutral(); });
+renderAvatars();
+const vsw = $("#voiceSw");
+vsw.classList.toggle("on", settings.voice);
+vsw.addEventListener("click", () => { settings.voice = !settings.voice; saveSettings(); vsw.classList.toggle("on", settings.voice); if(settings.voice) say(nm() ? `¡Hola, ${nm()}!` : "¡Hola!"); });
+
+/* =========================================================
+   APRENDE A MOVER
+   ========================================================= */
+const PIECES = [
+  {t:"R", name:"Torre", art:"la torre", start:"d4", desc:"La torre se mueve en línea recta: hacia delante, hacia atrás y hacia los lados. Puede avanzar todas las casillas que quiera."},
+  {t:"B", name:"Alfil", art:"el alfil", start:"d4", desc:"El alfil se mueve en diagonal, todas las casillas que quiera. Siempre se queda en casillas del mismo color."},
+  {t:"Q", name:"Dama", art:"la dama", start:"d4", desc:"La dama es la pieza más fuerte: se mueve como la torre y como el alfil juntos, en línea recta y en diagonal."},
+  {t:"K", name:"Rey", art:"el rey", start:"e4", desc:"El rey se mueve solo una casilla, en cualquier dirección. Es la pieza más importante: ¡hay que protegerlo!"},
+  {t:"N", name:"Caballo", art:"el caballo", start:"d4", desc:"El caballo salta en forma de L: dos casillas en una dirección y una hacia el lado. Es la única pieza que puede saltar por encima de otras."},
+  {t:"P", name:"Peón", art:"el peón", start:"e2", desc:"El peón avanza hacia delante una casilla (dos en su primer movimiento). Nunca va hacia atrás. Para comer, se mueve en diagonal hacia delante."}
+];
+const STARS_PER_PIECE = 5;
+function sqXY(s){ return [FILES.indexOf(s[0]), +s[1]-1]; }
+function xySq(x,y){ return x>=0&&x<8&&y>=0&&y<8 ? FILES[x]+(y+1) : null; }
+function pieceTargets(t, s, blocks = {}, enemy = {}){
+  const [x,y] = sqXY(s), out = [];
+  const ray = (dx,dy,max=8) => { for(let i=1;i<=max;i++){ const q = xySq(x+dx*i, y+dy*i); if(!q || blocks[q]) break; out.push(q); if(enemy[q]) break; } };
+  const R = [[1,0],[-1,0],[0,1],[0,-1]], B = [[1,1],[1,-1],[-1,1],[-1,-1]];
+  if(t==="R") R.forEach(d=>ray(...d));
+  if(t==="B") B.forEach(d=>ray(...d));
+  if(t==="Q") [...R,...B].forEach(d=>ray(...d));
+  if(t==="K") [...R,...B].forEach(d=>ray(...d,1));
+  if(t==="N") [[1,2],[2,1],[2,-1],[1,-2],[-1,-2],[-2,-1],[-2,1],[-1,2]].forEach(([dx,dy])=>{ const q = xySq(x+dx,y+dy); if(q && !blocks[q]) out.push(q); });
+  if(t==="P"){
+    const q1 = xySq(x,y+1); if(q1 && !blocks[q1] && !enemy[q1]){ out.push(q1); const q2 = xySq(x,y+2); if(y===1 && q2 && !blocks[q2] && !enemy[q2]) out.push(q2); }
+    [-1,1].forEach(dx => { const q = xySq(x+dx,y+1); if(q && enemy[q]) out.push(q); });
+  }
+  return out;
+}
+let MP = null, mpBoard = null;
+function renderPieceGrid(){
+  const pr = prog();
+  $("#pieceGrid").innerHTML = PIECES.map((p,i) => `<button class="tile ${pr.pieces[p.t]?"done":""}" data-pi="${i}"><div class="pc">${pieceSVG("w"+p.t)}</div><b>${p.name}</b></button>`).join("");
+}
+$("#pieceGrid").addEventListener("click", e => { const b = e.target.closest("[data-pi]"); if(b) startPiece(+b.dataset.pi); });
+const PAWN_SCRIPT = [ {star:"e4"}, {star:"e5"}, {star:"f6", enemy:"f6"}, {star:"f7"}, {star:"f8"} ];
+function startPiece(i){
+  const P = PIECES[i];
+  MP = {i, P, sq:P.start, count:0, star:null, blocks:{}, enemy:{}, done:false, errors:0};
+  if(P.t==="N") MP.blocks = {"d5":"wP","e5":"wP","c4":"wP"};
+  go("movePlay");
+  $("#mpTitle").textContent = P.name;
+  $("#mpNext").style.display = "none";
+  if(!mpBoard) mpBoard = new Board($("#mpBoard"), {
+    canPick: s => !MP.done && s === MP.sq,
+    targets: s => pieceTargets(MP.P.t, MP.sq, MP.blocks, MP.enemy),
+    showTargets: true,
+    onMove: (f,t) => mpMove(f,t)
+  });
+  nextStar();
+  const n = nm();
+  mpMsg(P.desc, "");
+  say(`${n ? n + ", " : ""}vamos a aprender a mover ${P.art}. Llévalo hasta la estrella.`);
+}
+function mpMsg(t, cls){ const m = $("#mpMsg"); m.textContent = t; m.className = "bubble " + (cls||""); }
+function makeBlocks(t, sq){
+  const [x,y] = sqXY(sq), b = {};
+  const ok = q => q && q[1] !== "1" && q[1] !== "8";
+  if(t === "K"){
+    const adj = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]].map(([dx,dy]) => xySq(x+dx,y+dy)).filter(ok);
+    adj.sort(() => Math.random() - .5).slice(0, 3).forEach(q => b[q] = "wP");
+    return b;
+  }
+  const dirs = {R:[[1,0],[-1,0],[0,1],[0,-1]], B:[[1,1],[1,-1],[-1,1],[-1,-1]], Q:[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]}[t];
+  const cand = dirs.filter(([dx,dy]) => xySq(x+dx*2, y+dy*2)).sort(() => Math.random() - .5).slice(0, t === "Q" ? 3 : 2);
+  cand.forEach(([dx,dy]) => { const k = 1 + Math.floor(Math.random()*2); const q = xySq(x + dx*k, y + dy*k); if(ok(q)) b[q] = "wP"; });
+  return b;
+}
+function nextStar(){
+  const t = MP.P.t;
+  if(t === "P"){
+    const step = PAWN_SCRIPT[MP.count]; MP.enemy = step.enemy ? {[step.enemy]:"bP"} : {}; MP.star = step.star;
+  } else {
+    MP.enemy = {};
+    if(t !== "N"){
+      MP.blocks = {};
+      if(MP.count === 2 || MP.count === 3){
+        for(let tries = 0; tries < 20; tries++){ const bl = makeBlocks(t, MP.sq); if(pieceTargets(t, MP.sq, bl).length >= 2){ MP.blocks = bl; break; } }
+      }
+    }
+    let opts = pieceTargets(t, MP.sq, MP.blocks);
+    if(t !== "K" && t !== "N"){ const far = opts.filter(q => { const [a,b]=sqXY(q),[c,d]=sqXY(MP.sq); return Math.max(Math.abs(a-c),Math.abs(b-d))>=2; }); if(far.length) opts = far; }
+    if(MP.last){ const f2 = opts.filter(q => q !== MP.last); if(f2.length) opts = f2; }
+    MP.star = pick(opts);
+    if(MP.count === STARS_PER_PIECE - 1){
+      // última estrella: hay que comer una pieza negra
+      const e = MP.star; MP.enemy = {[e]: pick(e[1] === "1" || e[1] === "8" ? ["bN","bB","bR"] : ["bP","bN","bB"])};
+    }
+  }
+  // ayuda visual en las 2 primeras estrellas
+  mpBoard.o.showTargets = MP.count < 2;
+  drawMP();
+  if(t !== "P" && MP.count === 2 && t !== "N"){
+    const txt = `¡Ahora hay piezas en el camino! ${MP.P.name === "Rey" ? "El rey no puede ir a una casilla donde ya hay una pieza suya." : `Recuerda: ${MP.P.art} no puede saltar por encima de otras piezas.`}`;
+    setTimeout(() => { mpMsg(txt, ""); say(txt); }, 1200);
+  }
+  if(t !== "P" && MP.count === STARS_PER_PIECE - 1){
+    const txt = `¡Una pieza negra! Cómela con ${MP.P.art}.`;
+    setTimeout(() => { mpMsg(txt + " Para comer, ve a su casilla y la quitas del tablero.", ""); say(txt); }, 1200);
+  }
+}
+function drawMP(){
+  const pos = {[MP.sq]: "w"+MP.P.t};
+  Object.entries(MP.blocks).forEach(([s,c]) => pos[s] = c);
+  Object.entries(MP.enemy).forEach(([s,c]) => pos[s] = c);
+  mpBoard.extra.stars = MP.star ? [MP.star] : [];
+  mpBoard.setPosition(pos);
+  $("#mpStars").innerHTML = Array.from({length:STARS_PER_PIECE}, (_,k) => `<i class="${k<MP.count?"on":""}">⭐</i>`).join("");
+}
+function mpMove(from, to){
+  if(MP.done) return;
+  const legal = pieceTargets(MP.P.t, MP.sq, MP.blocks, MP.enemy);
+  if(!legal.includes(to)){
+    MP.errors++;
+    sfx.soft();
+    mpBoard.render(); mpBoard.flash(to);
+    mpBoard.showDots(legal); setTimeout(() => mpBoard.showDots([]), 2200);
+    const free = pieceTargets(MP.P.t, MP.sq, {}, {});
+    let why;
+    if(MP.blocks[to]) why = "No puede ir a una casilla donde ya hay una pieza de su color.";
+    else if(free.includes(to) && MP.P.t !== "N" && MP.P.t !== "P") why = `¡${MP.P.name === "Dama" ? "La dama" : MP.P.name === "Torre" ? "La torre" : MP.P.name === "Alfil" ? "El alfil" : "El rey"} no puede saltar por encima de otras piezas! Solo el caballo salta.`;
+    else why = {R:"La torre solo va en línea recta.", B:"El alfil solo va en diagonal.", Q:"La dama va en línea recta o en diagonal.", K:"El rey solo da un pasito.", N:"El caballo salta en L: dos y una.", P:"El peón avanza recto hacia delante y solo come en diagonal."}[MP.P.t];
+    mpMsg(`¡Uy, por ahí no! ${why} Mira los puntos: son las casillas a las que puede ir.`, "bad");
+    say(pick(["Uy, por ahí no.","Casi. Prueba otra vez.","Por ahí no puede ir."]));
+    return;
+  }
+  if(to !== MP.star){
+    sfx.neutral(); mpBoard.render();
+    mpMsg("Ese movimiento vale, pero la estrella está en otra casilla. ¡Inténtalo!", "");
+    return;
+  }
+  // correcto
+  MP.last = MP.sq; MP.sq = to; MP.count++;
+  if(MP.P.t === "P" && to[1] === "8"){
+    sfx.win(); MP.enemy = {}; MP.star = null; drawMP();
+    mpBoard.setPosition({[to]:"wQ"});
+    mpMsg("¡Coronación! Cuando un peón llega al final del tablero se convierte en otra pieza. Casi siempre se elige una dama.", "ok");
+    return finishPiece(true);
+  }
+  const ate = !!MP.enemy[to];
+  if(ate){ MP.enemy = {}; }
+  if(MP.count >= STARS_PER_PIECE) return finishPiece(false);
+  sfx.good();
+  const msg = praise();
+  mpMsg(msg + (ate ? (MP.P.t==="P" ? " ¡Has comido en diagonal!" : " ¡Te la has comido!") : ""), "ok");
+  say(msg);
+  nextStar();
+}
+function finishPiece(crowned){
+  MP.done = true; MP.star = null;
+  if(!crowned) drawMP(); else $("#mpStars").innerHTML = Array.from({length:STARS_PER_PIECE}, () => `<i class="on">⭐</i>`).join("");
+  const pr = prog(); pr.pieces[MP.P.t] = true; saveProg();
+  sfx.win(); confetti();
+  const n = nm(), all = PIECES.every(p => pr.pieces[p.t]);
+  const txt = `¡Muy bien${n ? ", " + n : ""}! Ya sabes mover ${MP.P.art}${crowned ? "" : " y comer con " + (MP.P.t==="K"?"él":MP.P.t==="R"||MP.P.t==="Q"?"ella":"él")}.` + (all ? " ¡Y ya sabes mover todas las piezas! Puedes imprimir tu diploma." : "");
+  if(!crowned) mpMsg(txt, "ok"); else $("#mpMsg").textContent += " " + txt;
+  setTimeout(() => say(txt), crowned ? 300 : 100);
+  const nb = $("#mpNext");
+  if(MP.i < PIECES.length - 1){ nb.textContent = "Siguiente pieza →"; nb.onclick = () => startPiece(MP.i + 1); }
+  else { nb.textContent = "Ver todas las piezas"; nb.onclick = () => go("moveMenu"); }
+  nb.style.display = "";
+}
+$("#mpHelp").addEventListener("click", () => {
+  if(!MP) return;
+  mpMsg(MP.P.desc, ""); say(MP.P.desc);
+  mpBoard.showDots(pieceTargets(MP.P.t, MP.sq, MP.blocks, MP.enemy)); setTimeout(() => mpBoard.showDots([]), 3000);
+});
+
+/* =========================================================
+   ENTRENA ESTRATEGIAS
+   ========================================================= */
+const LESSONS = DATA.lessons;
+let TP = null, tpBoard = null;
+function solvedSet(lid){ const pr = prog(); return pr.solved[lid] || (pr.solved[lid] = []); }
+function renderLessonGrid(){
+  $("#lessonGrid").innerHTML = LESSONS.map((L,i) => {
+    const s = solvedSet(L.id).filter(id => L.online.some(p => p.id === id)).length, tot = L.online.length;
+    return `<button class="tile ${s>=tot?"done":""}" data-li="${i}"><div class="lic">${L.icon}</div><b>${L.title}</b><small>${s} / ${tot}</small></button>`;
+  }).join("");
+}
+$("#lessonGrid").addEventListener("click", e => { const b = e.target.closest("[data-li]"); if(b) openLesson(+b.dataset.li); });
+function openLesson(i){
+  const L = LESSONS[i];
+  $("#tiTitle").textContent = L.title;
+  $("#tiText").innerHTML = L.intro.map(p => `<p>${p}</p>`).join("");
+  $("#tiStart").onclick = () => {
+    const done = solvedSet(L.id); let k = L.online.findIndex(p => !done.includes(p.id)); if(k < 0) k = 0;
+    startPuzzle(i, k);
+  };
+  go("tacIntro");
+}
+function fenToPos(fen){
+  const pos = {}, rows = fen.split(" ")[0].split("/");
+  rows.forEach((row, ri) => { let f = 0; for(const ch of row){ if(/\d/.test(ch)) f += +ch; else { pos[FILES[f] + (8-ri)] = (ch === ch.toUpperCase() ? "w" : "b") + ch.toUpperCase(); f++; } } });
+  return pos;
+}
+function chessToPos(ch){ const pos = {}; ch.board().forEach(r => r.forEach(c => { if(c) pos[c.square] = c.color + c.type.toUpperCase(); })); return pos; }
+function startPuzzle(li, k){
+  const L = LESSONS[li], P = L.online[k];
+  TP = {li, k, L, P, ch: new Chess(P.fen), node: P.tree, side: P.fen.split(" ")[1], busy:false, wrong:0, done:false};
+  go("tacPlay");
+  $("#tpTitle").textContent = L.title;
+  const sideTxt = TP.side === "w" ? "Juegan blancas" : "Juegan negras";
+  $("#tpTask").innerHTML = `<span class="side ${TP.side}"></span>${sideTxt}. ${P.task || L.task}`;
+  renderDots();
+  if(!tpBoard) tpBoard = new Board($("#tpBoard"), {
+    canPick: s => !TP.busy && !TP.done && TP.ch.get(s) && TP.ch.get(s).color === TP.ch.turn() && TP.ch.turn() === TP.side,
+    targets: s => TP.ch.moves({square:s, verbose:true}).map(m => m.to),
+    onMove: (f,t) => tpMove(f,t)
+  });
+  tpBoard.setFlip(TP.side === "b");
+  tpBoard.mark("last", []); tpBoard.mark("hint", []);
+  tpBoard.setPosition(chessToPos(TP.ch));
+  tpMsg(P.name ? `«${P.name}»` : "", "");
+  $("#tpNext").style.display = "none"; $("#tpSol").style.display = "none";
+  $("#tpHint").disabled = false;
+}
+function renderDots(){
+  const done = solvedSet(TP.L.id);
+  $("#tpDots").innerHTML = TP.L.online.map((p,i) => `<span class="${done.includes(p.id)?"ok":""} ${i===TP.k?"cur":""}"></span>`).join("");
+}
+function tpMsg(t, cls){ const m = $("#tpMsg"); m.innerHTML = t; m.className = "bubble " + (cls||""); }
+function tpMove(from, to){
+  if(TP.busy || TP.done) return;
+  const piece = TP.ch.get(from);
+  const promo = piece && piece.type === "p" && (to[1] === "8" || to[1] === "1") ? "q" : undefined;
+  let mv;
+  try{ mv = TP.ch.move({from, to, promotion: promo}); }catch(e){ mv = null; }
+  if(!mv){ tpBoard.render(); return; }
+  const uci = from + to + (promo || "");
+  const next = TP.node[uci];
+  tpBoard.setPosition(chessToPos(TP.ch)); tpBoard.mark("last", [from, to]); tpBoard.mark("hint", []);
+  if(next === undefined){
+    TP.wrong++; TP.busy = true; sfx.soft();
+    tpMsg(TP.L.id === "open" ? "Esa jugada no sigue la idea. Piensa otra vez en lo que te pide." : "Esa jugada no consigue el objetivo. ¡Piénsalo otra vez!", "bad");
+    say(pick(["Casi. Prueba otra vez.","Uy, esa no es.","Piénsalo un poco más."]));
+    setTimeout(() => { TP.ch.undo(); tpBoard.setPosition(chessToPos(TP.ch)); tpBoard.mark("last", []); TP.busy = false; }, 900);
+    if(TP.wrong >= 3) $("#tpSol").style.display = "";
+    return;
+  }
+  if(next === 1) return solved();
+  // jugada correcta intermedia → respuesta del rival
+  sfx.good(); TP.busy = true;
+  tpMsg("¡Buena jugada! Ahora mira cómo responde el rival…", "ok");
+  setTimeout(() => {
+    const r = next.r;
+    TP.ch.move({from:r.slice(0,2), to:r.slice(2,4), promotion:r[4]});
+    sfx.move(); tpBoard.setPosition(chessToPos(TP.ch)); tpBoard.mark("last", [r.slice(0,2), r.slice(2,4)]);
+    TP.node = next.n; TP.busy = false;
+    tpMsg(TP.L.id === "mate2" ? "Ahora, ¡da el jaque mate!" : "¡Ahora remata!", "");
+  }, 700);
+}
+function solved(){
+  TP.done = true;
+  const s = solvedSet(TP.L.id); if(!s.includes(TP.P.id)) s.push(TP.P.id); saveProg();
+  renderDots();
+  const msg = praise();
+  const allDone = TP.L.online.every(p => s.includes(p.id));
+  tpMsg(`<b>${msg}</b><br>${TP.P.expl}`, "ok");
+  sfx.win(); confetti(allDone ? 220 : 120);
+  let speech = msg;
+  if(allDone && TP.k === TP.L.online.length - 1) speech += ` Has completado la lección de ${TP.L.title}.`;
+  say(speech);
+  const nb = $("#tpNext"); nb.style.display = "";
+  if(TP.k < TP.L.online.length - 1){ nb.textContent = "Siguiente →"; nb.onclick = () => startPuzzle(TP.li, TP.k + 1); }
+  else { nb.textContent = allDone ? "¡Lección completada! 🏅" : "Volver a las lecciones"; nb.onclick = () => go("tacMenu"); }
+  $("#tpSol").style.display = "none"; $("#tpHint").disabled = true;
+}
+$("#tpHint").addEventListener("click", () => {
+  if(!TP || TP.done) return;
+  const first = Object.keys(TP.node)[0];
+  tpBoard.mark("hint", [first.slice(0,2)]);
+  tpMsg("💡 " + TP.P.hint, "");
+});
+$("#tpReset").addEventListener("click", () => { if(TP) startPuzzle(TP.li, TP.k); });
+$("#tpSol").addEventListener("click", () => {
+  if(!TP) return;
+  const side = TP.side === "b" ? "1… " : "";
+  tpMsg(`Solución: <b>${side}${TP.P.sol.join(" ")}</b><br>${TP.P.expl}`, "");
+  const first = Object.keys(TP.node)[0]; tpBoard.mark("hint", [first.slice(0,2), first.slice(2,4)]);
+});
+
+/* =========================================================
+   IMPRIMIBLES
+   ========================================================= */
+function boardSVG(fen, o = {}){
+  // fen: piece placement or full FEN; o: {flip, marks:{sq:'dot'|'x'|'star'|'hl'}, coords:true}
+  const pos = typeof fen === "string" ? fenToPos(fen) : fen, flip = !!o.flip, coords = o.coords !== false;
+  const m = coords ? 6 : 0, S = 10, W = 8*S + m;
+  let s = `<svg viewBox="0 0 ${W} ${W}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">`;
+  for(let r=0;r<8;r++) for(let f=0;f<8;f++){
+    const fx = flip ? 7-f : f, ry = flip ? r : 7-r, sq = FILES[fx] + (ry+1);
+    const x = m + f*S, y = r*S, light = (fx + ry) % 2 === 1;
+    s += `<rect x="${x}" y="${y}" width="${S}" height="${S}" fill="${light ? "#F1E2CC" : "#C99568"}"/>`;
+    const mk = o.marks && o.marks[sq];
+    if(mk === "hl") s += `<rect x="${x}" y="${y}" width="${S}" height="${S}" fill="#B65332" opacity=".35"/>`;
+    if(pos[sq]) s += `<g transform="translate(${x},${y}) scale(${S/45})">${pieceSVG(pos[sq]).replace(/<\/?svg[^>]*>/g,"")}</g>`;
+    if(mk === "dot") s += `<circle cx="${x+S/2}" cy="${y+S/2}" r="1.7" fill="#657258"/>`;
+    if(mk === "x") s += `<path d="M${x+3} ${y+3} L${x+7} ${y+7} M${x+7} ${y+3} L${x+3} ${y+7}" stroke="#B65332" stroke-width="1.2"/>`;
+    if(mk === "star") s += `<circle cx="${x+S/2}" cy="${y+S/2}" r="2.4" fill="none" stroke="#B65332" stroke-width="1"/>`;
+  }
+  s += `<rect x="${m}" y="0" width="${8*S}" height="${8*S}" fill="none" stroke="#403D32" stroke-width=".8"/>`;
+  if(coords) for(let i=0;i<8;i++){
+    s += `<text x="${m + i*S + S/2}" y="${8*S + 4.6}" font-size="3.6" text-anchor="middle" fill="#403D32" font-family="Nunito,sans-serif">${flip ? FILES[7-i] : FILES[i]}</text>`;
+    s += `<text x="${m/2}" y="${i*S + S/2 + 1.3}" font-size="3.6" text-anchor="middle" fill="#403D32" font-family="Nunito,sans-serif">${flip ? i+1 : 8-i}</text>`;
+  }
+  if(o.arrow){ const [a,b] = o.arrow, p = q => { const [x,y] = sqXY(q); const fx = flip ? 7-x : x, ry = flip ? y : 7-y; return [m + fx*S + S/2, ry*S + S/2]; }; const [x1,y1] = p(a), [x2,y2] = p(b);
+    s += `<defs><marker id="ah" markerWidth="4" markerHeight="4" refX="2.2" refY="2" orient="auto"><path d="M0,0 L4,2 L0,4 z" fill="#B65332"/></marker></defs><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#B65332" stroke-width="1.6" marker-end="url(#ah)" opacity=".85"/>`; }
+  return s + `</svg>`;
+}
+function setPage(size){ let st = $("#pageSize"); if(!st){ st = document.createElement("style"); st.id = "pageSize"; document.head.appendChild(st); } st.textContent = `@page{size:${size};margin:0}`; }
+const INAPP = /Instagram|FBAN|FBAV|FB_IAB|Line\/|TikTok|musical_ly|Bytedance|Snapchat|Pinterest/i.test(navigator.userAgent);
+let IFRAMED = false; try{ IFRAMED = window.self !== window.top; }catch(e){ IFRAMED = true; }
+function fitPreview(){
+  const pa = $("#printArea"), pg = pa.querySelector(".page"); if(!pg) return;
+  pa.style.zoom = 1;
+  const w = pg.offsetWidth, z = Math.min(1, (window.innerWidth - 16) / w);
+  pa.style.zoom = z;
+}
+function doPrint(html, size){
+  $("#printArea").innerHTML = html; setPage(size);
+  document.body.classList.add("preview");
+  const note = $("#pbNote");
+  if(INAPP){ note.className = "warn"; note.textContent = "Estás dentro de una app (por ejemplo, Instagram), que no deja imprimir. Pulsa el menú ··· y elige «Abrir en el navegador»."; }
+  else if(IFRAMED){ note.className = "warn"; note.textContent = "En esta vista no se puede imprimir. Abre la página directamente en Safari o Chrome."; }
+  else { note.className = ""; note.textContent = "Si no se abre la ventana de impresión, abre esta página en Safari o Chrome."; }
+  window.scrollTo(0,0);
+  requestAnimationFrame(fitPreview);
+}
+window.addEventListener("resize", () => { if(document.body.classList.contains("preview")) fitPreview(); });
+$("#pbPrint").addEventListener("click", () => {
+  try{ window.print(); }
+  catch(e){ const n = $("#pbNote"); n.className = "warn"; n.textContent = "Este navegador no deja imprimir desde aquí. Abre la página en Safari o Chrome."; }
+});
+$("#pbBack").addEventListener("click", () => { document.body.classList.remove("preview"); $("#printArea").innerHTML = ""; $("#printArea").style.zoom = 1; go("printMenu"); });
+function today(){ return new Date().toLocaleDateString("es-ES", {day:"numeric", month:"long", year:"numeric"}); }
+function esc(t){ return String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* diploma */
+function diplomaHTML(){
+  const pr = prog(), n = nm();
+  const badges = [];
+  PIECES.forEach(p => { if(pr.pieces[p.t]) badges.push(`${p.name} ✓`); });
+  LESSONS.forEach(L => { const s = (pr.solved[L.id]||[]).filter(id => L.online.some(p=>p.id===id)).length; if(s >= L.online.length) badges.push(`${L.title} ✓`); });
+  const reason = badges.length ? "por todo lo que ha aprendido de ajedrez" : "por sus ganas de aprender ajedrez";
+  return `<div class="page land"><div class="dip">
+    <div style="font-size:42pt;line-height:1">${settings.avatar}</div>
+    <h1>Diploma</h1>
+    <p style="font-size:14pt;margin:2mm 0 0">Escuela de ajedrez Eiden concede este diploma a</p>
+    <div class="nm">${n ? esc(n) : "&nbsp;"}</div>
+    <p style="font-size:14pt">${reason}</p>
+    <div class="badges">${badges.map(b => `<span>${b}</span>`).join("")}</div>
+    <div class="sign"><div>Fecha: ${today()}</div><div>Firma</div></div>
+  </div></div>`;
+}
+$("#prDiploma").addEventListener("click", () => doPrint(diplomaHTML(), "A4 landscape"));
+
+/* ejercicios */
+$("#prLesson").innerHTML = LESSONS.map((L,i) => `<option value="${i}">${L.title}</option>`).join("");
+function exercisesHTML(li, withSol){
+  const L = LESSONS[li], n = nm();
+  const list = [...L.paper, ...L.online].slice(0, 6);
+  const items = list.map((p,i) => {
+    const side = p.fen.split(" ")[1];
+    return `<div class="it"><div class="cap">${i+1}. ${side==="w"?"Juegan blancas":"Juegan negras"} <span>· ${esc(p.task || L.task)}</span></div>
+      ${boardSVG(p.fen, {flip: side==="b"})}<div class="ans">Mi jugada:</div></div>`;
+  }).join("");
+  let html = `<div class="page port"><div class="ph"><div><h1 style="font-size:24pt">${L.title}</h1><div class="note" style="font-size:9.5pt">Escuela de ajedrez Eiden · Hoja de ejercicios</div></div>
+    <div class="nm">Nombre: ${n ? "<b>"+esc(n)+"</b>" : "________________"}</div></div>
+    <p style="font-size:10pt;margin-bottom:4mm">${L.intro.slice(0,2).join(" ")}</p>
+    <div class="ex">${items}</div></div>`;
+  if(withSol){
+    html += `<div class="page port"><div class="ph"><h1 style="font-size:24pt">Soluciones · ${L.title}</h1></div><ol class="sol">${
+      list.map(p => `<li><b>${p.fen.split(" ")[1]==="b" ? "1… " : ""}${p.sol.join(" ")}</b><br>${esc(p.expl)}</li>`).join("")}</ol>
+      <div class="box" style="margin-top:8mm"><p><b>Cómo se escriben las jugadas.</b> Cada casilla se nombra con su letra y su número (e4). La letra mayúscula indica la pieza: R rey, D dama, T torre, A alfil, C caballo; los peones no llevan letra. «x» significa captura, «+» jaque, «#» jaque mate y «0-0» enroque corto.</p></div></div>`;
+  }
+  return html;
+}
+$("#prEx").addEventListener("click", () => doPrint(exercisesHTML(+$("#prLesson").value, $("#prSol").checked), "A4 portrait"));
+
+/* tablero recortable */
+function cutBoardHTML(){
+  const start = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+  const emptyBoard = boardSVG("8/8/8/8/8/8/8/8");
+  const set = c => ["K","Q","R","R","B","B","N","N","P","P","P","P","P","P","P","P"].map(t => `<div>${pieceSVG(c+t)}</div>`).join("");
+  return `<div class="page port"><div class="ph"><h1 style="font-size:24pt">Tablero de ajedrez</h1><div class="nm">${nm() ? esc(nm()) : ""}</div></div>
+      <div style="width:180mm;margin:0 auto">${emptyBoard}</div>
+      <p style="margin-top:5mm;text-align:center">Coloca el tablero con la casilla blanca (clara) en la esquina inferior derecha. Las piezas de la otra hoja tienen el tamaño justo de cada casilla.</p></div>
+    <div class="page port"><div class="ph"><h1 style="font-size:24pt">Piezas para recortar</h1><div class="nm">Recorta por la línea de puntos</div></div>
+      <h2>Blancas</h2><div class="cut">${set("w")}</div>
+      <h2 style="margin-top:8mm">Negras</h2><div class="cut">${set("b")}</div>
+      <div class="box" style="margin-top:8mm"><p><b>Posición inicial.</b> En la primera fila: torre, caballo, alfil, dama, rey, alfil, caballo, torre. Delante, los ocho peones. La dama va en la casilla de su color.</p>
+      <div style="width:60mm;margin:3mm auto 0">${boardSVG(start)}</div></div></div>`;
+}
+$("#prBoard").addEventListener("click", () => doPrint(cutBoardHTML(), "A4 portrait"));
+
+/* guía para familias */
+function movesMarks(t, s, extra = {}){ const m = {}; pieceTargets(t, s, extra.blocks || {}).forEach(q => m[q] = "dot"); return m; }
+function guideHTML(){
+  const start = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+  const P = (t, sq, extraPos = {}, blocks = {}) => { const pos = Object.assign({[sq]:"w"+t}, extraPos); return boardSVG(pos, {marks: movesMarks(t, sq, {blocks}), coords:false}); };
+  const pawnPos = {"e2":"wP","d3":"bP","f3":"bN"};
+  const pawnMarks = {"e3":"dot","e4":"dot","d3":"dot","f3":"dot"};
+  const p1 = `<div class="page port">
+    <div class="ph"><div><h1>Guía para empezar a jugar al ajedrez</h1><div class="note" style="font-size:10pt">Para familias que quieren aprender a jugar con sus hijos · Escuela de ajedrez Eiden</div></div></div>
+    <div class="two">
+      <div>
+        <h2>El tablero</h2>
+        <p>Tiene 64 casillas, claras y oscuras. Las columnas se nombran con letras (de la <b>a</b> a la <b>h</b>) y las filas con números (del <b>1</b> al <b>8</b>). Así, cada casilla tiene un nombre: e4, d5…</p>
+        <p>Se coloca de forma que cada jugador tenga una <b>casilla clara en su esquina inferior derecha</b>.</p>
+        <h2>Las piezas</h2>
+        <p>Cada jugador tiene 16 piezas: 1 rey, 1 dama, 2 torres, 2 alfiles, 2 caballos y 8 peones. Un jugador lleva las blancas y el otro las negras.</p>
+        <h2>Cómo empieza la partida</h2>
+        <ul><li>En la primera fila: torre, caballo, alfil, dama, rey, alfil, caballo y torre.</li>
+        <li>La dama se coloca en la casilla de su color: la dama blanca en casilla clara y la negra en casilla oscura.</li>
+        <li>Los ocho peones van en la fila de delante.</li>
+        <li><b>Empiezan siempre las blancas.</b> Después se juega por turnos: una jugada cada uno.</li></ul>
+      </div>
+      <div><div class="box">${boardSVG(start)}<p style="text-align:center;margin-top:2mm"><b>Posición inicial</b></p></div>
+        <div class="box"><h2 style="margin-top:0">¿Cómo se gana?</h2><p>Dando <b>jaque mate</b>: atacando al rey rival de forma que no pueda escapar. El rey nunca se captura: la partida termina en ese momento.</p>
+        <p><b>Capturar</b> («comer») es mover una pieza a la casilla de una pieza rival, que se retira del tablero. Nadie está obligado a capturar.</p></div>
+      </div>
+    </div>
+    <h2>Lo que vale cada pieza (orientativo)</h2>
+    <p>Peón = 1 · Caballo = 3 · Alfil = 3 · Torre = 5 · Dama = 9 · El rey no tiene valor: si se pierde, se pierde la partida. Sirve para saber si un cambio de piezas te conviene.</p>
+  </div>`;
+  const pz = (t, title, txt, svg) => `<div class="pz"><div style="width:52mm">${svg}</div><h3>${pieceSVG("w"+t).replace("<svg",'<svg style="width:6mm;height:6mm;vertical-align:-1.3mm"')} ${title}</h3><p>${txt}</p></div>`;
+  const p2 = `<div class="page port">
+    <div class="ph"><h1>Cómo se mueve cada pieza</h1></div>
+    <p>Los puntos verdes marcan las casillas a las que puede ir la pieza. Ninguna pieza puede saltar por encima de otras, <b>excepto el caballo</b>. Una pieza no puede ir a una casilla ocupada por una pieza de su mismo color.</p>
+    <div class="pieces6">
+      ${pz("K","Rey","Una sola casilla en cualquier dirección. Nunca puede ir a una casilla atacada por una pieza rival.", P("K","e4"))}
+      ${pz("Q","Dama","En línea recta y en diagonal, todas las casillas que quiera. Es la pieza más poderosa.", P("Q","d4"))}
+      ${pz("R","Torre","En línea recta, hacia delante, hacia atrás y hacia los lados, todas las casillas que quiera.", P("R","d4"))}
+      ${pz("B","Alfil","En diagonal, todas las casillas que quiera. Siempre se queda en casillas del mismo color.", P("B","d4"))}
+      ${pz("N","Caballo","En forma de L: dos casillas en una dirección y una hacia el lado. Es la única pieza que salta por encima de las demás.", boardSVG({"d4":"wN","d5":"wP","e5":"bP","c4":"wP"}, {marks: movesMarks("N","d4"), coords:false}))}
+      ${pz("P","Peón","Avanza una casilla hacia delante (o dos, solo en su primer movimiento). Nunca retrocede. <b>Captura en diagonal</b>, una casilla hacia delante. No puede avanzar si tiene una pieza justo delante.", boardSVG(pawnPos, {marks: pawnMarks, coords:false}))}
+    </div>
+  </div>`;
+  const castle = boardSVG({"e1":"wK","h1":"wR","a1":"wR","e8":"bK"}, {marks:{"g1":"hl","f1":"hl","c1":"hl","d1":"hl"}, coords:true});
+  const ep = boardSVG({"e5":"wP","d5":"bP","e1":"wK","e8":"bK"}, {marks:{"d6":"dot"}, arrow:["e5","d6"]});
+  const promo = boardSVG({"b7":"wP","e1":"wK","g8":"bK"}, {marks:{"b8":"hl"}, arrow:["b7","b8"]});
+  const p3 = `<div class="page port">
+    <div class="ph"><h1>Reglas especiales</h1></div>
+    <div class="two">
+      <div>
+        <h2>Jaque</h2><p>Cuando una pieza ataca al rey se dice «jaque». Quien recibe el jaque <b>tiene que salir de él</b> en su jugada, de una de estas tres formas: moviendo el rey a una casilla segura, poniendo una pieza en medio o capturando la pieza que da jaque.</p>
+        <h2>Jaque mate</h2><p>Es un jaque del que no se puede salir de ninguna forma. Gana quien da el jaque mate.</p>
+        <h2>Ahogado</h2><p>Si a un jugador le toca mover, <b>no está en jaque</b> y no tiene ninguna jugada permitida, la partida termina en <b>tablas</b> (empate). Hay que tener cuidado al ir ganando.</p>
+        <h2>Coronación</h2><p>Cuando un peón llega a la última fila, se cambia por una dama, una torre, un alfil o un caballo de su color (casi siempre se elige dama). Se puede tener más de una dama.</p>
+        <div style="width:48mm">${promo}</div>
+      </div>
+      <div>
+        <h2>Enroque</h2><p>Es la única jugada en la que se mueven dos piezas a la vez. El rey se desplaza <b>dos casillas</b> hacia una de sus torres y esa torre salta al otro lado del rey. Enroque corto (hacia la torre de h): el rey va a g1 y la torre a f1. Enroque largo (hacia la torre de a): el rey va a c1 y la torre a d1.</p>
+        <p>Solo se puede enrocar si:</p>
+        <ul><li>ni el rey ni esa torre se han movido antes;</li><li>no hay piezas entre ellos;</li><li>el rey no está en jaque, ni pasa por una casilla atacada, ni termina en una casilla atacada.</li></ul>
+        <div style="width:48mm">${castle}</div>
+        <h2>Captura al paso</h2><p>Si un peón avanza dos casillas desde su posición inicial y queda justo al lado de un peón rival, ese peón rival puede capturarlo como si solo hubiera avanzado una casilla. Solo se puede hacer en la jugada inmediatamente siguiente.</p>
+        <div style="width:48mm">${ep}</div><p class="note" style="font-size:8.5pt">El peón negro acaba de jugar de d7 a d5. El blanco de e5 puede capturarlo yendo a d6.</p>
+      </div>
+    </div>
+  </div>`;
+  const p4 = `<div class="page port">
+    <div class="ph"><h1>Otras formas de tablas y consejos</h1></div>
+    <h2>Cuándo hay tablas (empate)</h2>
+    <ul><li>Por <b>ahogado</b>.</li><li>Por <b>acuerdo</b> entre los dos jugadores.</li>
+    <li>Cuando a ninguno le quedan piezas suficientes para dar mate (por ejemplo, rey contra rey).</li>
+    <li>Cuando la misma posición se repite tres veces; o cuando pasan 50 jugadas de cada jugador sin ninguna captura ni movimiento de peón. En estos dos casos, un jugador puede pedir las tablas.</li></ul>
+    <h2>Consejos para jugar con tu hijo o tu hija</h2>
+    <ul>
+      <li><b>Dejad que os enseñe.</b> Explicar lo que sabe le ayuda a afianzarlo, y vosotros aprendéis a la vez.</li>
+      <li><b>Empezad con partidas solo de peones.</b> Cada uno pone sus ocho peones en su sitio y gana quien primero lleve un peón a la última fila. Así se aprende cómo avanzan y capturan.</li>
+      <li><b>Al principio, permitid deshacer jugadas.</b> Más adelante podéis jugar con la regla oficial de «pieza tocada, pieza movida»: si tocas una pieza tuya a propósito, tienes que moverla (si puede moverse).</li>
+      <li><b>Antes de mover, tres preguntas:</b> ¿qué quiere hacer mi rival con su última jugada? ¿Mis piezas están protegidas? ¿Puedo dar jaque, capturar algo o amenazar una pieza?</li>
+      <li><b>Cuatro ideas para empezar bien la partida:</b> ocupar el centro con los peones, sacar pronto caballos y alfiles, enrocar para proteger al rey y no sacar la dama demasiado pronto.</li>
+      <li>Las partidas cortas y frecuentes funcionan mejor que una partida muy larga. Ganar o perder importa menos que disfrutar pensando juntos.</li>
+    </ul>
+    <div class="box" style="margin-top:6mm"><p><b>Cómo se escriben las jugadas.</b> Cada casilla se nombra con su letra y su número (e4). Una letra mayúscula indica la pieza: R rey, D dama, T torre, A alfil, C caballo; los peones no llevan letra. Ejemplo: «Cf3» es caballo a f3. «x» significa captura, «+» jaque, «#» jaque mate, «0-0» enroque corto y «0-0-0» enroque largo.</p></div>
+    <p class="note" style="margin-top:8mm;text-align:center">Escuela de ajedrez Eiden · Ana Moré · anamoresoy.com</p>
+  </div>`;
+  return p1 + p2 + p3 + p4;
+}
+$("#prGuide").addEventListener("click", () => doPrint(guideHTML(), "A4 portrait"));
+
+/* modo PDF directo: ?print=guia | diploma | tablero | ejercicios&l=0 */
+(function(){
+  const q = new URLSearchParams(location.search), p = q.get("print");
+  if(!p) return;
+  const html = p === "guia" ? guideHTML() : p === "tablero" ? cutBoardHTML() : p === "diploma" ? diplomaHTML() : p === "ejercicios" ? exercisesHTML(+(q.get("l")||0), true) : "";
+  if(!html) return;
+  document.body.classList.add("pdfmode"); $("#printArea").innerHTML = html; setPage(p === "diploma" ? "A4 landscape" : "A4 portrait");
+})();
+</script>
+</body>
+</html>
